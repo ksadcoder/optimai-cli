@@ -53,3 +53,11 @@ diag:
 validate:
 	.venv/bin/python -m py_compile bot/*.py
 	.venv/bin/python tests/smoke_test.py
+
+help:
+	@echo "Available Makefile targets:"
+	@echo "  check      - Run bytecode compilation and smoke test suite"
+	@echo "  pytest     - Run pytest harness"
+	@echo "  clean      - Remove bytecode and cache artifacts"
+	@echo "  diag       - Run system diagnostic script"
+	@echo "  validate   - Compile and execute validation checks"
