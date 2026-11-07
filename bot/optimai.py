@@ -22,7 +22,15 @@ import asyncio
 import os
 
 NOT_AUTHENTICATED_MARK = "Not authenticated"
+UPDATE_WARNING_MARK = "Important OptimAI CLI update available"
 LOG_ROTATE_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+def contains_update_warning(text: str) -> bool:
+    """True when the CLI printed its 'Important OptimAI CLI update available'
+    warning (the upstream troubleshooting signal: the installed CLI uses an
+    older update system and must be reinstalled). Pure function."""
+    return UPDATE_WARNING_MARK.lower() in text.lower()
 
 
 class OptimaiCLI:
