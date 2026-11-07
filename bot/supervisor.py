@@ -109,6 +109,17 @@ class Supervisor:
     # Desired-state persistence (atomic write)
     # ------------------------------------------------------------------
 
+    
+    def reset_crashes_if_stable(self, stable_window_seconds: int = 600) -> bool:
+        """Reset crash counter if process has run continuously past the stable window."""
+        if self.running and self._started_at:
+            if (asyncio.get_running_loop().time() - self._started_at) >= stable_window_seconds:
+                if self._consecutive_crashes > 0:
+                    self._consecutive_crashes = 0
+                    self._backoff_level = 0
+                    return True
+        return False
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
