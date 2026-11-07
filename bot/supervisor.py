@@ -120,6 +120,16 @@ class Supervisor:
                     return True
         return False
 
+    
+    def get_uptime_seconds(self) -> int:
+        """Return the current running duration in integer seconds."""
+        if not self.running or self._started_at is None:
+            return 0
+        try:
+            return max(0, int(asyncio.get_running_loop().time() - self._started_at))
+        except RuntimeError:
+            return 0
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
