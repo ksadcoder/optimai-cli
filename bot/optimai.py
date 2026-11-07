@@ -1,0 +1,208 @@
+"""Async wrapper around the `optimai-cli` binary plus pure log helpers.
+
+Verified CLI surface (optimai-cli v0.1.63, core CLI 0.1.63):
+  - `auth login --no-open --paste`  (both flags exist; URL points at
+    https://node.optimai.network, paste-callback flow for SSH/VPS hosts)
+  - `auth status`                   (logged out prints "Not authenticated"
+    with EXIT CODE 0 — so authentication is detected by substring, never
+    by exit code alone)
+  - `node start` / `node status --format [json|text]`
+  - `rewards balance --format [json|text]`
+  - There is NO `node stop` subcommand: the node stops gracefully on Ctrl+C,
+    which is why the supervisor sends SIGINT to the process group.
+  - There is NO `optimai-cli docker` subcommand: the docker CLI is called
+    directly via `run_bin`.
+  - The bootstrap binary downloads the core CLI into $HOME on first use and
+    stores credentials under $HOME/.optimai -> HOME must be a persistent path.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
+
+NOT_AUTHENTICATED_MARK = "Not authenticated"
+LOG_ROTATE_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+class OptimaiCLI:
+    """Async subprocess wrapper. `run()` targets the optimai CLI (with the
+    persistent HOME override); `run_bin()` targets arbitrary host binaries."""
+
+    def __init__(self, binary: str = "optimai-cli", home: str = "/data/home") -> None:
+        self.binary = binary
+        self.home = home
+
+    def _cli_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        env["HOME"] = self.home
+        return env
+
+    async def run(self, *args: str, timeout: float = 30) -> tuple[int | None, str, str]:
+        """Run the optimai CLI; returns (returncode, stdout, stderr). Never
+        raises on non-zero exit; kills the process on timeout. Does not block
+        the event loop (asyncio.create_subprocess_exec only)."""
+        return await self._exec(self.binary, args, timeout, self._cli_env())
+
+    async def run_bin(
+        self, binary: str, *args: str, timeout: float = 30
+    ) -> tuple[int | None, str, str]:
+        """Same contract as `run()` but for an arbitrary host binary (e.g. the
+        static `docker` client). Uses the inherited environment."""
+        return await self._exec(binary, args, timeout, None)
+
+    async def _exec(
+        self,
+        binary: str,
+        args: tuple[str, ...],
+        timeout: float,
+        env: dict[str, str] | None,
+    ) -> tuple[int | None, str, str]:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                binary,
+                *args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+            )
+        except FileNotFoundError:
+            return (127, "", f"{binary}: command not found")
+        except PermissionError:
+            return (126, "", f"{binary}: not executable")
+
+        try:
+            out_b, err_b = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+            try:
+                out_b, err_b = await proc.communicate()
+            except Exception:
+                out_b, err_b = b"", b""
+            return (
+                124,
+                (out_b or b"").decode("utf-8", "replace"),
+                (err_b or b"").decode("utf-8", "replace") or f"{binary}: timed out after {timeout}s",
+            )
+
+        out = (out_b or b"").decode("utf-8", "replace")
+        err = (err_b or b"").decode("utf-8", "replace")
+        return (proc.returncode, out, err)
+
+    # ------------------------------------------------------------------
+    # Domain helpers
+    # ------------------------------------------------------------------
+
+    async def auth_status(self) -> tuple[int | None, str, str]:
+        return await self.run("auth", "status")
+
+    async def is_authenticated(self) -> bool:
+        """False on non-zero exit OR on the logged-out output. The real CLI
+        prints exactly `Not authenticated` with exit code 0 when logged out,
+        so substring matching is mandatory. Never raises."""
+        try:
+            rc, out, err = await self.auth_status()
+        except Exception:
+            return False
+        text = out + err
+        return rc == 0 and NOT_AUTHENTICATED_MARK not in text
+
+    async def node_status(self) -> tuple[bool, str]:
+        """(ok, text) — text is passed through raw for Telegram display."""
+        rc, out, err = await self.run("node", "status", timeout=60)
+        return rc == 0, (out + err).strip()
+
+    async def rewards_balance(self) -> tuple[bool, str]:
+        """(ok, text) — text is passed through raw for Telegram display."""
+        rc, out, err = await self.run("rewards", "balance", timeout=60)
+        return rc == 0, (out + err).strip()
+
+    async def docker_server_version(self) -> tuple[bool, str]:
+        """Ask the HOST docker daemon (through the mounted socket at
+        /var/run/docker.sock) for its server version using the docker CLI
+        client directly — NEVER `optimai-cli docker` (not a real subcommand).
+        Returns (ok=False, "") on Railway where the daemon does not exist."""
+        rc, out, err = await self.run_bin(
+            "docker", "version", "--format", "{{.Server.Version}}", timeout=15
+        )
+        version = (out or "").strip()
+        if rc == 0 and version:
+            return True, version
+        return False, ""
+
+
+# ----------------------------------------------------------------------
+# Pure log helpers (unit-tested without any CLI process)
+# ----------------------------------------------------------------------
+
+
+def tail_file(path: str, lines: int) -> list[str]:
+    """Return the last `lines` lines of `path` as a list of strings."""
+    if lines <= 0:
+        return []
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            size = fh.tell()
+            block = 8192
+            data = b""
+            start = max(0, size - block * max(1, lines // 8 + 2))
+            fh.seek(start)
+            while fh.tell() < size:
+                chunk = fh.read(block)
+                if not chunk:
+                    break
+                data += chunk
+                if data.count(b"\n") > lines:
+                    break
+            real_lines = data.splitlines()[-lines:]
+            return [ln.decode("utf-8", "replace") for ln in real_lines]
+    except (FileNotFoundError, NotADirectoryError, PermissionError, OSError):
+        return []
+
+
+def read_new_chunk(path: str, start_offset: int) -> tuple[str, int]:
+    """Read the bytes of `path` from `start_offset` to EOF.
+
+    Returns (chunk, new_offset). CRITICAL: the shrink/rotation check must be
+    `size < start_offset` — using `<=` made /watch resend old data after the
+    log was rotated/recreated (an empty file must NOT reset the offset... it
+    must, when the file was replaced; equality is handled by reading zero new
+    bytes and returning the same offset).
+    """
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return "", start_offset
+    if size < start_offset:
+        # File shrunk (rotated / recreated) -> start over from the beginning.
+        start_offset = 0
+    if size == start_offset:
+        return "", start_offset
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(start_offset)
+            data = fh.read()
+    except OSError:
+        return "", start_offset
+    return data.decode("utf-8", "replace"), size
+
+
+def rotate_log(path: str, max_bytes: int = LOG_ROTATE_MAX_BYTES) -> bool:
+    """Keep one `.1` backup of `path`, then truncate it in place (safe even
+    while the node process holds an append handle: the file object is not
+    replaced for the writer because we truncate by writing an empty file).
+
+    Returns True when a rotation happened."""
+    try:
+        if not os.path.isfile(path) or os.path.getsize(path) <= max_bytes:
+            return False
+        os.replace(path, path + ".1")
+        with open(path, "wb"):
+            pass  # recreate an empty primary file
+        return True
+    except OSError:
+        return False
