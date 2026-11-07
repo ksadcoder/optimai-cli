@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.0 — 2026-11-07
+
+### Added
+- Dual authentication flow: direct email/password login (`/login <email> <password>` and `/login_legacy`) alongside browser OAuth flow.
+- Upstream CLI update command (`/update_cli` and `/update`) for automated optimai-cli version management.
+- Bundled official `optimai-cli` Linux binary into Dockerfile and added host installation checks in `setup-vps.sh`.
+- Automatic Railway `$PORT` detection and HTTP health server binding (`GET /health -> 200 OK`).
+- Multi-environment local execution guide and auto-fallback storage path (`./data`) when running outside Docker on macOS, Linux, and Windows.
+- OptimAI referral link (`https://node.optimai.network/register?ref=646D12E7`) integrated across Telegram inline buttons and guides.
+- Streamlined 5-step beginner setup guide and visual cheatsheet in `README.md`.
+- Expanded smoke test coverage to 108 automated checks.
+
 ## v1.1.0 — 2026-11-07
 
 ### Added

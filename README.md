@@ -1,9 +1,9 @@
-# ⛏️ OptimAI Telegram Node v1.1.0
+# ⛏️ OptimAI Telegram Node v1.2.0
 
 ![CI](https://github.com/mkr-infinity/optimai-cli/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
-![Version](https://img.shields.io/badge/version-1.1.0-orange)
+![Version](https://img.shields.io/badge/version-1.2.0-orange)
 [![Telegram](https://img.shields.io/badge/contact-%40mkr__infinity-blue)](https://t.me/mkr_infinity)
 
 > 🚀 **Your 24/7 OptimAI Network node, controlled entirely from Telegram.**
@@ -285,5 +285,5 @@ Detailed guides are available in the [`docs/`](docs/) directory:
 
 ### Attribution
 
-**OptimAI Telegram Node v1.1.0** — Created by **Mohammad Kaif Raja (mkr-infinity)**
+**OptimAI Telegram Node v1.2.0** — Created by **Mohammad Kaif Raja (mkr-infinity)**
 [Telegram @mkr_infinity](https://t.me/mkr_infinity) · [Support](https://buymeacoffee.com/mkr_infinity) · UPI: `mkr-infinity@ybl`
