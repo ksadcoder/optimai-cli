@@ -1,0 +1,69 @@
+#!/bin/sh
+# prepare-commit-msg — TEMPORARY pair-coauthor trailer helper.
+#
+# Appends one `Co-authored-by:` trailer per entry in .coauthors AFTER
+# the user's message, with a single blank line separator, at the very
+# end of the commit message file.
+#
+# Behavior contract:
+#   - acts ONLY for normal commits (skips merge / squash / rebase, and
+#     does not meddle with --amend reuse commits either: it can only
+#     append, never strip, so amend stays intact)
+#   - idempotent: entries already present in the message are skipped
+#   - silent no-op if .coauthors is missing/empty or has no usable lines
+#   - always exits 0 — never blocks a commit
+#
+# Remove any time with:  bash scripts/setup-git.sh --uninstall
+# (full removal path in SETUP-PAIR.md)
+
+msg_file="$1"
+source="${2:-}"
+
+case "$source" in
+  merge | squash | rebase | commit)
+    # not a normal commit: do nothing at all
+    exit 0
+    ;;
+  "" | message)
+    # normal commit: continue below
+    ;;
+  *)
+    # unknown source type: stay out of the way
+    exit 0
+    ;;
+esac
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+coauthors_file="$root/.coauthors"
+[ -f "$coauthors_file" ] || exit 0
+
+blank_written=
+while IFS= read -r line || [ -n "$line" ]; do
+  # trim surrounding whitespace and carriage returns
+  line=$(printf '%s' "$line" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+  case "$line" in
+    '' | '#'*) continue ;;
+  esac
+  # accept only plausible "Name <email>" author lines
+  case "$line" in
+    *'<'*'>') ;;
+    *) continue ;;
+  esac
+  # idempotency: allow each entry up to as many times as it appears in
+  # .coauthors (three identical placeholder lines = three trailers)
+  co_count=$(grep -cF -- "$line" "$coauthors_file" 2>/dev/null || true)
+  msg_count=$(grep -cF -- "Co-authored-by: $line" "$msg_file" 2>/dev/null || true)
+  [ -n "$co_count" ] || co_count=0
+  [ -n "$msg_count" ] || msg_count=0
+  if [ "$msg_count" -ge "$co_count" ]; then
+    continue
+  fi
+  if [ -z "$blank_written" ]; then
+    # single blank-line separator before the trailer block
+    printf '\n' >> "$msg_file"
+    blank_written=1
+  fi
+  printf 'Co-authored-by: %s\n' "$line" >> "$msg_file"
+done < "$coauthors_file"
+
+exit 0

@@ -1,0 +1,48 @@
+# TEMPORARY, self-contained coauthor trailer check.
+# Distinct name/concurrency from CI: it coexists with existing workflows
+# and only reads PR metadata.
+name: Pair Co-Author Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  coauthor-trailer:
+    name: verify Co-authored-by trailers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that at least one PR commit has a Co-authored-by trailer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          repo="${{ github.repository }}"
+          pr="${{ github.event.pull_request.number }}"
+
+          coauthored=$(gh api "repos/$repo/pulls/$pr/commits?per_page=100" \
+            --paginate \
+            --jq '[.[] | .commit.message] | map(select(test("Co-authored-by:"))) | length')
+
+          total=$(gh api "repos/$repo/pulls/$pr/commits?per_page=100" \
+            --paginate --jq 'length')
+
+          echo "PR #$pr: $coauthored of $total commit(s) carry a Co-authored-by: trailer"
+          if [ "$total" -eq 0 ]; then
+            echo "PR has no commits (empty diff?) — nothing to check."
+            exit 0
+          fi
+          if [ "$coauthored" -eq 0 ]; then
+            echo ""
+            echo "❌ No commit in this PR carries a 'Co-authored-by:' trailer."
+            echo "   Fix: fill .coauthors at the repo root (Name <id+username@users.noreply.github.com>),"
+            echo "   run:  bash scripts/setup-git.sh  (activates the prepare-commit-msg hook),"
+            echo "   then rewrite/redo your commits (e.g. 'git commit --amend -m \"same message\"')"
+            echo "   and push again. See SETUP-PAIR.md."
+            exit 1
+          fi
+          echo "✅ Pair Extraordinaire credit flow is satisfied for this PR."
