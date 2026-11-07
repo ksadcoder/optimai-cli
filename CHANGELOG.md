@@ -1,0 +1,45 @@
+# Changelog
+
+## v1.0.0 — 2026-11-07
+
+First stable release of **OptimAI Telegram Node**: a Dockerized Python Telegram
+bot that runs an OptimAI Network CLI node 24/7 on a VPS, controlled entirely
+from Telegram, with an honest Railway control-plane mode.
+
+### Added
+- Telegram command set (admin-gated): `/help`, `/status`, `/start_node`,
+  `/stop_node`, `/restart_node`, `/rewards`, `/logs`, `/watch`, `/login`,
+  `/auth_status`, `/me`, `/cancel`, `/version` — and `/id`, open to everyone
+  (counted toward the unauthorized promo budget).
+- Desired-state supervisor: `state.json` persistence, SIGINT process-group
+  stop, crash auto-restart with 5s→15s→60s→300s backoff, 5-crash circuit
+  breaker with exactly one alert, Telegram crash alerts with the last 15 log
+  lines.
+- pexpect paste-login (`auth login --no-open --paste`), TTL expiry, single
+  pending session, safe cancel.
+- Hosting-provider promo funnel: `CONTACT_USERNAME`, `UNAUTHORIZED_MESSAGE`
+  override with `{contact}`, per-stranger budget persisted in
+  `unauth_counts.json`.
+- Railway deployment files: `railway.json` (DOCKERFILE + ON_FAILURE) and
+  `Procfile` (worker); honest "no Docker daemon" warning from `/status`,
+  `/start_node`, `/stop_node`, `/restart_node`.
+- Docker/VPS: `python:3.12-slim` image with the static Docker CLI client
+  (best-effort, pinned 27.3.1), `docker-compose.yml` with `restart:
+  unless-stopped` + `init: true` + socket + `./data:/data`, idempotent
+  `setup-vps.sh` (Docker via get.docker.com, 2G swap, preflight checks).
+- Tests: 80→83-check smoke suite with a deterministic stub CLI
+  (`scripts/stub-optimai-cli.sh`), pytest wrapper, GitHub Actions CI
+  (compile → suite → pytest → compose config) on every PR.
+- Startup banner v1.0.0 with attribution (Mohammad Kaif Raja / mkr-infinity).
+
+### Verified against the real CLI (v0.1.63)
+- `auth login --no-open --paste` exists exactly as used by the bot.
+- No `node stop` subcommand → stop = SIGINT to the process group.
+- Logged-out `auth status` prints `Not authenticated` with **exit code 0** →
+  auth detection is substring-based, never exit-code-only.
+
+### Known limitations
+- Railway cannot run the node workload (no docker.sock, no privileged mode) —
+  by platform design; the bot warns instead of failing.
+- `node start` runtime shape (attached vs daemonized) is only observable on a
+  logged-in VPS; the supervisor handles both.
