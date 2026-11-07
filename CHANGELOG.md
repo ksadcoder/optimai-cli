@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.0 — 2026-11-07
+
+### Added
+- Bot uptime monitoring surfaced directly in `/status` output.
+- Missing log file feedback in `/watch` command for clean initial-run ergonomics.
+- Port range validation (1-65535) for `ENABLE_HEALTH_PORT` with safe fallback to 8080.
+- Expanded offline smoke test coverage (84/84 checks).
+- Full documentation catalog in `docs/` covering architecture, daily operations, performance benchmarks, testing guides, comparison matrix, and upgrading procedures.
+- Enhanced `Makefile` targets (`check`, `pytest`) for fast local developer workflows.
+- Dynamic co-author attribution engine supporting GitHub follower recognition.
+
 ## v1.0.0 — 2026-11-07
 
 First stable release of **OptimAI Telegram Node**: a Dockerized Python Telegram
