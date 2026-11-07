@@ -99,6 +99,10 @@ except ConfigError as exc:
         "BotFather" in msg and "/id" in msg,
         msg,
     )
+    check(
+        "config: unauth default promo contains contact",
+        "@mkr_infinity" in Config.load_unauth_promo("@mkr_infinity"),
+    )
 
 try:
     Config.load(env=base_env(TELEGRAM_BOT_TOKEN="t", TELEGRAM_ALLOWED_IDS="123, abc"))

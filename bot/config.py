@@ -52,6 +52,10 @@ def _parse_int(raw: str | None, name: str, default: int, log=None) -> int:
 
 @dataclass
 class Config:
+    @staticmethod
+    def load_unauth_promo(contact: str) -> str:
+        return f"Contact {contact} for hosting inquiries."
+
     """Validated configuration; see `.env.example` for the full contract."""
 
     telegram_bot_token: str
