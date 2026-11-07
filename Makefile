@@ -64,3 +64,10 @@ help:
 
 git-status:
 	bash scripts/check-git-clean.sh
+
+help-all:
+	@echo "OptimAI CLI Developer Commands:"
+	@echo "  make check      - Bytecode + smoke test suite"
+	@echo "  make pytest     - Run pytest test suite"
+	@echo "  make clean      - Clean cache and temp files"
+	@echo "  make diag       - Run host diagnostics"
