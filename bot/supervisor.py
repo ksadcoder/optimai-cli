@@ -140,6 +140,11 @@ class Supervisor:
         """Return a single-line summary of supervisor state."""
         return f"desired={self.desired} running={self.running} crashes={self._consecutive_crashes}"
 
+    
+    def get_consecutive_crashes(self) -> int:
+        """Return the number of consecutive crashes since last reset."""
+        return self._consecutive_crashes
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
