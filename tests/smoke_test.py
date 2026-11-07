@@ -57,6 +57,7 @@ from bot.login_session import LoginManager, LoginSession  # noqa: E402
 from bot.optimai import (  # noqa: E402
     NOT_AUTHENTICATED_MARK,
     OptimaiCLI,
+    contains_update_warning,
     read_new_chunk,
     rotate_log,
     tail_file,
@@ -218,6 +219,11 @@ check(
 check(
     "optimai: rotate_log under threshold is a no-op",
     rotate_log(logp, max_bytes=64) is False and os.path.isfile(logp),
+)
+check(
+    "optimai: contains_update_warning matches the upstream CLI warning",
+    contains_update_warning("IMPORTANT OptimAI CLI update available - reinstall") is True
+    and contains_update_warning("everything is fine") is False,
 )
 
 cli = OptimaiCLI(binary=STUB, home=os.environ["OPTIMAI_HOME"])
@@ -439,6 +445,10 @@ check(
 )
 check("main: alert_fn wired into Supervisor", "sup._alert_fn = alert_fn" in src)
 check("main: sup.start_loop() called in post_init", "await sup.start_loop()" in src)
+check(
+    "main: /status surfaces the CLI update warning via contains_update_warning",
+    "contains_update_warning" in src and "Important OptimAI CLI update available" in src,
+)
 check("main: run_polling(drop_pending_updates=True)", "run_polling(drop_pending_updates=True)" in src)
 check("main: /id budgeted via gate.record", "gate.record(user.id)" in src)
 check("main: optional health server behind ENABLE_HEALTH_PORT", "enable_health_port" in src and "_health_serve" in src)

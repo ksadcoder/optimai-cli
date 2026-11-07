@@ -220,6 +220,7 @@ the bot or separating the control-plane; the VPS is the real solution.**
 | Bot completely silent | check token + allowed IDs in `.env`; run `docker compose logs -f` |
 | Commands sent while bot was down do nothing | by design: `drop_pending_updates=True` discards stale messages during downtime |
 | Railway `/status` warns "Docker daemon not reachable" | **expected** — control-plane only, see appendix 8 |
+| `/status` shows the "Important OptimAI CLI update available" warning | reinstall the CLI on the VPS host per the upstream README (it does not auto-fix via `optimai-cli update` alone) |
 | Node crash-loops | the bot pauses after 5 crashes; read the crash alert tail, fix root cause (RAM? disk?), then `/restart_node` |
 | After reboot node did NOT come back | check `state.json` desired state and `NODE_AUTO_START`; if you stopped it manually it stays stopped by design |
 

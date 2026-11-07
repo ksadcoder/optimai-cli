@@ -32,7 +32,13 @@ import bot
 from bot.config import Config, ConfigError
 from bot.gatekeeper import UnauthorizedGate
 from bot.login_session import LoginManager
-from bot.optimai import OptimaiCLI, read_new_chunk, tail_file
+from bot.optimai import (
+    NOT_AUTHENTICATED_MARK,
+    OptimaiCLI,
+    contains_update_warning,
+    read_new_chunk,
+    tail_file,
+)
 from bot.supervisor import CRASH_LIMIT, Supervisor
 
 log = logging.getLogger("bot.main")
@@ -128,8 +134,10 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cfg, cli, sup, _gate, _login = _wd(context)
-    authenticated = await cli.is_authenticated()
-    docker_ok, docker_ver = await cli.docker_server_version()
+    rc, out, err = await cli.auth_status()
+    auth_text = out + err
+    authenticated = rc == 0 and NOT_AUTHENTICATED_MARK not in auth_text
+    docker_ok, _ = await cli.docker_server_version()
     sup.update_health(authenticated, docker_ok)
     snap = sup.snapshot()
 
@@ -149,6 +157,11 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     ]
     if not snap["docker_ok"]:
         lines.append(DOCKER_DEAD_WARNING)
+    if contains_update_warning(auth_text):
+        lines.append(
+            "⚠️ Important OptimAI CLI update available — reinstall the CLI per "
+            "README (run `optimai-cli update` steps on the VPS host)."
+        )
     await _reply(update, "\n".join(lines))
 
 
