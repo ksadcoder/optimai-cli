@@ -50,3 +50,10 @@ Versioned, scope-honest plan. Deployed = merged to main and verified by CI.
 
 We have achieved 100 merged pull requests! All core deliverables for v1.1.0 and
 v1.2.0 stability enhancements are fully tested, documented, and shipped.
+
+---
+
+## 🚀 Milestone Achieved: 125 Merged PRs
+
+125 merged pull requests! Complete test coverage, operational scripts,
+and enterprise observability delivered.
