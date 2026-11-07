@@ -159,7 +159,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         "<b>Node status</b> (live)",
         f"Node: {node_line}",
         bot_uptime_line,
-        f"Desired state: {snap['desired']}",
+        f"Desired state: {snap['desired']} (pid: {snap['pid'] or 'none'})",
         f"Authenticated: {'✅ yes' if snap['authenticated'] else '❌ no — run /login'}",
         f"Docker: {'✅ reachable' if snap['docker_ok'] else '❌ NOT REACHABLE'}",
         f"Last exit code: {snap['last_exit_code']}",
