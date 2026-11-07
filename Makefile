@@ -78,3 +78,6 @@ check-all:
 
 env-check:
 	@test -f .env && echo "[OK] .env exists" || echo "[WARN] .env missing"
+
+logs:
+	docker compose logs --tail=100 -f
