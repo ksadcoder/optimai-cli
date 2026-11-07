@@ -71,3 +71,7 @@ help-all:
 	@echo "  make pytest     - Run pytest test suite"
 	@echo "  make clean      - Clean cache and temp files"
 	@echo "  make diag       - Run host diagnostics"
+
+check-all:
+	make check
+	bash scripts/check-git-clean.sh
