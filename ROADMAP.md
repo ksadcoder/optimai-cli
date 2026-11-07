@@ -43,3 +43,10 @@ Versioned, scope-honest plan. Deployed = merged to main and verified by CI.
 - Storing OptimAI email/password credentials (the CLI's browser-paste login is
   the supported path)
 - Public internet-facing bot ports (outbound-only polling by design)
+
+---
+
+## 🎯 Milestone Achieved: 100 PRs Shipped
+
+We have achieved 100 merged pull requests! All core deliverables for v1.1.0 and
+v1.2.0 stability enhancements are fully tested, documented, and shipped.
