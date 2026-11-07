@@ -229,6 +229,11 @@ The `docs/` directory contains deep-dive references for operators and architects
 | [BACKUP-RESTORE.md](docs/BACKUP-RESTORE.md) | Automated daily cron backup and restore procedure |
 | [ENV-VARS.md](docs/ENV-VARS.md) | Complete catalog of environment variables and defaults |
 | [UPGRADING.md](docs/UPGRADING.md) | Zero data-loss upgrade runbook and rollback steps |
+| [OBSERVABILITY.md](docs/OBSERVABILITY.md) | Telemetry, logging, and health port reference |
+| [SYSTEMD.md](docs/SYSTEMD.md) | Alternative systemd native service deployment |
+| [STORAGE.md](docs/STORAGE.md) | Volume persistence and filesystem state specs |
+| [SECURITY-CHECKLIST.md](docs/SECURITY-CHECKLIST.md) | Production security hardening checklist |
+| [API.md](docs/API.md) | Internal HTTP healthcheck endpoint specs |
 | [COMPARISON.md](docs/COMPARISON.md) | Comparison matrix against tmux and systemd deployments |
 | [TESTING.md](docs/TESTING.md) | Test harness design and smoke test execution guide |
 
