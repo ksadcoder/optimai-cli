@@ -130,6 +130,11 @@ class Supervisor:
         except RuntimeError:
             return 0
 
+    
+    def get_crash_limit(self) -> int:
+        """Return the circuit breaker consecutive crash threshold."""
+        return CRASH_LIMIT
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
