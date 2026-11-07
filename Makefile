@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 PY := .venv/bin/python
 
-.PHONY: help venv install test pytest compile check clean compose-config
+.PHONY: help venv install test pytest compile check status clean compose-config
 
 help:
 	@echo "targets:"
