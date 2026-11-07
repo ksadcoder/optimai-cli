@@ -518,7 +518,7 @@ def build_app(cfg: Config) -> Application:
 
 
 def main() -> None:
-    print_banner()
+    bot.print_banner()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
