@@ -39,68 +39,32 @@
 - An **OptimAI account** (register at https://node.optimai.network)
 - A bot created with **@BotFather** (takes 2 minutes)
 
-## 3. Beginner guide — VPS in 7 steps
+## 3. Quickstart — VPS Setup
 
-**Step 1 — Rent a VPS.** Pick any €4-6/mo Ubuntu 22.04+ box. You get an IP address
- (e.g. `203.0.113.7`) and a root password.
+Deploy to Ubuntu 22.04+ in under 5 minutes:
 
-**Step 2 — Get the project onto the VPS.**
+1. **Clone repository to VPS**:
+   ```bash
+   git clone https://github.com/mkr-infinity/optimai-cli.git && cd optimai-cli
+   ```
+2. **Run host provisioning**:
+   ```bash
+   bash setup-vps.sh
+   ```
+   *(Installs Docker, configures 2GB swap, sets up data directory permissions)*
+3. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   # Set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_IDS
+   ```
+4. **Launch container**:
+   ```bash
+   docker compose up -d --build
+   ```
+5. **Verify**:
+   Send `/status` to your bot in Telegram to verify the node is running.
 
-```bash
-# on YOUR PC (from the folder where this project is):
-zip -r optimai-cli.zip . -x "data/*" ".git/*" ".env"
-scp optimai-cli.zip root@203.0.113.7:~
-ssh root@203.0.113.7
-```
-
-**Step 3 — Prepare the VPS (Docker + 2G swap).**
-
-```bash
-unzip optimai-cli.zip && cd optimai-cli   # folder name = wherever you unzipped
-bash setup-vps.sh
-```
-
-**Step 4 — Fill in exactly 2 required values.**
-
-```bash
-cp .env.example .env && nano .env
-```
-
-| Value | Where it comes from |
-|---|---|
-| `TELEGRAM_BOT_TOKEN=` | Telegram → open a chat with **@BotFather** → `/newbot` → copy the token |
-| `TELEGRAM_ALLOWED_IDS=` | Leave empty for now — see Step 5 |
-
-**Step 5 — Start the stack.**
-
-```bash
-docker compose up -d --build
-docker compose logs -f          # expect the banner + "Bot online."
-```
-
-Open the bot in Telegram and send **/id** → it replies with your numeric ID. Put that ID into
-`TELEGRAM_ALLOWED_IDS=123456789` in `.env`, then restart:
-
-```bash
-docker compose up -d
-```
-
-**Step 6 — Log in (no browser on the server needed).**
-
-Send `/login` in Telegram → a button opens the OptimAI login page on YOUR phone/PC → sign in →
-copy the final redirect URL → paste it into the bot chat. Done.
-
-**Step 7 — Start the node and verify.**
-
-```bash
-# in Telegram:
-/start_node
-/status        # node: running (uptime…), Docker: ✅ reachable, Auth: ✅ yes
-/rewards       # your balance
-```
-
-You're live. Updating later: upload the new code (or `git pull`) and run
-`docker compose up -d --build`. Your data (login, state) survives rebuilds — it lives in `./data:/data`.
+> 📖 **Full Guide**: See [docs/DEPLOY-VPS.md](docs/DEPLOY-VPS.md) for step-by-step VPS walkthroughs and [docs/DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md) for Railway control-plane deployment.
 
 ## 4. Configuration
 
