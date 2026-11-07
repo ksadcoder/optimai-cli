@@ -61,3 +61,6 @@ help:
 	@echo "  clean      - Remove bytecode and cache artifacts"
 	@echo "  diag       - Run system diagnostic script"
 	@echo "  validate   - Compile and execute validation checks"
+
+git-status:
+	bash scripts/check-git-clean.sh
