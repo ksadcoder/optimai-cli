@@ -1,5 +1,11 @@
 # OptimAI Telegram Node v1.0.0
 
+![CI](https://github.com/mkr-infinity/optimai-cli/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![Version](https://img.shields.io/badge/version-1.0.0-orange)
+[![Telegram](https://img.shields.io/badge/contact-%40mkr__infinity-blue)](https://t.me/mkr_infinity)
+
 **Your 24/7 OptimAI Network node, controlled entirely from Telegram** — start it, stop it, restart it,
  read live logs, check rewards, even log in, all with simple commands on your phone. If the node
  crashes at 3 AM, the bot restarts it automatically and DMs you.
