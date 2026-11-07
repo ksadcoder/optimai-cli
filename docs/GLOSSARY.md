@@ -13,4 +13,4 @@
 | **docker.sock** | The host's Docker control socket mounted into the container — the ONLY way the node workload can run; absent on Railway. |
 | **node.log** | The node process's stdout+stderr, appended under `/data/data`; rotated at 10 MB into `node.log.1`. |
 | **drop_pending_updates** | Telegram polling option that discards messages sent while the bot was offline — stale command floods don't execute. |
-| **Pair credit** | GitHub achievement engine: a merged PR whose commits contain `Co-authored-by:` trailers credits every listed co-author. This repo temporarily stamps trailers automatically (SETUP-PAIR.md). |
+| **Pair credit** | GitHub achievement engine: a merged PR whose commits contain `Co-authored-by:` trailers credits every listed co-author. |

@@ -23,4 +23,3 @@
 - [ ] restrict shell (key-only SSH, no password auth)
 - [ ] keep `TELEGRAM_ALLOWED_IDS` minimal
 - [ ] snapshot ./data (contains creds!) only to encrypted storage
-- [ ] review the auto-trailer setup: delete when done (SETUP-PAIR.md)

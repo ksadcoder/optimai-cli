@@ -9,4 +9,3 @@ CI, and container environments.
 | Pytest Wrapper | `tests/test_all.py` | Full test discovery harness | ~6.0s |
 | Byte Compilation | `bot/*.py` | Syntax & annotations verification | ~0.2s |
 | Compose Validation | `docker-compose.yml` | Environment substitution & volume mappings | ~0.5s |
-| Co-author Verification | `.github/workflows/coauthor-check.yml` | Pair credit audit | ~3.0s |

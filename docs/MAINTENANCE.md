@@ -33,8 +33,3 @@
 - Branches left behind → delete on GitHub or `git push origin --delete <name>`
 - Secret rotation → @BotFather /revoke, update `.env`, `docker compose up -d`
 - Storage of `data/` → it holds live credentials; never commit, never wipe casually
-
-## Removing the temporary coauthor tooling (when farming ends)
-
-See SETUP-PAIR.md 'REMOVE EVERYTHING': unset hooksPath, delete the 5 files,
-commit.
