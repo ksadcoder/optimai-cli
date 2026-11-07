@@ -377,6 +377,10 @@ async def supervisor_checks() -> None:
         "supervisor: fmt_uptime '3h 12m' style",
         fmt_uptime(3 * 3600 + 12 * 60) == "3h 12m" and fmt_uptime(45) == "45s" and fmt_uptime(None) == "-",
     )
+    check(
+        "supervisor: fmt_uptime days boundary and negative seconds",
+        fmt_uptime(2 * 86400 + 5 * 3600) == "2d 5h" and fmt_uptime(-10) == "-" and fmt_uptime(125) == "2m",
+    )
 
     # stop_loop must NOT kill the node process
     await sup2.request_start()
