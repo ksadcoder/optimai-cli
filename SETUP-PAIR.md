@@ -8,8 +8,8 @@ merged PRs earn Pair Extraordinaire credit.
 
 | File | Purpose |
 |---|---|
-| `.coauthors` | one co-author per line, format `Name <id+username@users.noreply.github.com>` (fill the 3 lines with real values) |
-| `.githooks/prepare-commit-msg` | POSIX sh hook: appends one `Co-authored-by:` trailer per `.coauthors` entry (idempotent, skips merge/squash/rebase, no-ops on missing/empty `.coauthors`, never blocks or breaks `--amend`) |
+| `.coauthors` | list of co-authors from followers, format `Name <id+username@users.noreply.github.com>` |
+| `.githooks/prepare-commit-msg` | POSIX sh hook: randomly picks between 2 and 10 co-authors from `.coauthors` per commit (idempotent, skips merge/squash/rebase, no-ops on missing/empty `.coauthors`, never blocks or breaks `--amend`) |
 | `scripts/setup-git.sh` | `chmod +x` the hook + `git config core.hooksPath .githooks` + verification; `--uninstall` flag unsets `core.hooksPath` |
 | `.github/workflows/coauthor-check.yml` | PR check: each PR must have ≥ 1 commit carrying `Co-authored-by:` (distinct name, read-only permissions, coexists with existing workflows) |
 | `SETUP-PAIR.md` | this file |
