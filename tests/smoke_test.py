@@ -391,6 +391,10 @@ async def supervisor_checks() -> None:
         fmt_uptime(2 * 86400 + 5 * 3600) == "2d 5h" and fmt_uptime(-10) == "-" and fmt_uptime(125) == "2m",
     )
     check(
+        "supervisor: get_uptime_seconds helper returns int",
+        isinstance(sup2.get_uptime_seconds(), int),
+    )
+    check(
         "supervisor: breakdown_uptime returns dict",
         breakdown_uptime(90061) == {"days": 1, "hours": 1, "minutes": 1, "seconds": 1}
         and breakdown_uptime(-5) == {"days": 0, "hours": 0, "minutes": 0, "seconds": 0},
