@@ -87,7 +87,7 @@ class LoginSession:
 
         def _submit() -> tuple[bool, str]:
             child = self.child
-            if child is None or child.closed():
+            if child is None or child.closed:
                 return (False, GONE_MESSAGE)
             try:
                 child.sendline(text.replace("\n", " ").replace("\r", " "))
@@ -134,14 +134,14 @@ class LoginSession:
         """
         child = self.child
         self.child = None
-        if child is not None and not child.closed():
+        if child is not None and not child.closed:
             try:
                 child.close(force=True)
             except Exception:
                 log.debug("Closing login child failed (ignored)", exc_info=True)
 
     def is_child_closed(self) -> bool:
-        return self.child is None or self.child.closed()
+        return self.child is None or self.child.closed
 
 
 class LoginManager:
@@ -159,7 +159,7 @@ class LoginManager:
         return (
             self._session is not None
             and self._session.child is not None
-            and not self._session.child.closed()
+            and not self._session.child.closed
         )
 
     async def start(self) -> str | None:
