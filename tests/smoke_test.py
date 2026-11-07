@@ -317,6 +317,7 @@ async def supervisor_checks() -> None:
     check("supervisor: snapshot has all fields", expected_keys <= set(snap), str(snap.keys()))
 
     pid = await sup.request_start()
+    check("supervisor: snapshot pid key is present", "pid" in sup.snapshot())
     check("supervisor: request_start persists desired=running", sup.desired == "running")
     await asyncio.sleep(0.4)
     check("supervisor: node process spawned (pid + running)", pid is not None and sup.running)
