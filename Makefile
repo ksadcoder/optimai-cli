@@ -43,3 +43,9 @@ compose-config:
 	sed -i "s/^TELEGRAM_ALLOWED_IDS=$/TELEGRAM_ALLOWED_IDS=123456789/" .env
 	docker compose config > /dev/null
 	rm .env
+
+clean:
+	rm -rf __pycache__ bot/__pycache__ tests/__pycache__ .pytest_cache .coverage
+
+diag:
+	bash scripts/system-info.sh
