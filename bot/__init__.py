@@ -46,3 +46,7 @@ def print_banner() -> None:
         clean = re.sub(r"\033\[[0-9;]*m", "", BANNER_TEXT)
         sys.stdout.write(clean + "\n")
     sys.stdout.flush()
+
+def get_full_version_string() -> str:
+    """Return full product name and version string."""
+    return f"OptimAI Telegram Node v{__version__}"
