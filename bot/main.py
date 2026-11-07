@@ -156,7 +156,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"{snap['backoff_level']} | circuit breaker: {snap['breaker']}"
     )
     lines = [
-        "<b>Node status</b>",
+        "<b>Node status</b> (live)",
         f"Node: {node_line}",
         bot_uptime_line,
         f"Desired state: {snap['desired']}",
