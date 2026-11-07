@@ -375,6 +375,10 @@ async def supervisor_checks() -> None:
         "supervisor: close_breaker resets counters",
         not sup2._breaker_open and sup2._consecutive_crashes == 0 and sup2._backoff_level == 0,
     )
+    check(
+        "supervisor: reset_crashes_if_stable helper exists",
+        hasattr(sup2, "reset_crashes_if_stable"),
+    )
 
     # fmt_uptime formatting
     check(
