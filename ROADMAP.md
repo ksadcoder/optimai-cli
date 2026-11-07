@@ -12,13 +12,17 @@ Versioned, scope-honest plan. Deployed = merged to main and verified by CI.
 - [x] VPS one-shot setup with preflight checks
 - [x] 80+-check smoke suite + pytest + CI on every PR
 
-## v1.1 (next)
+## v1.1 (shipped)
 
-- [ ] `clients.json` multi-owner hosting mode (per-Telegram-ID client label,
-      quota fields, per-client /rewards attribution)
+- [x] Compose healthcheck / health port validation (1-65535 range)
+- [x] Bot uptime metrics surfaced directly in `/status`
+- [x] Missing log file feedback in `/watch`
+- [x] Comprehensive documentation catalog in `docs/` and operator runbooks
+- [x] Expanded offline smoke test coverage (85/85 checks)
+- [x] Dynamic co-author attribution engine supporting GitHub follower recognition
+- [ ] `clients.json` multi-owner hosting mode (see `docs/MULTI-OWNER.md` design draft)
 - [ ] CLI update notifier as its own admin alert (already in /status)
 - [ ] `/disk` and `docker stats`-inspired node resource snapshot command
-- [ ] Compose healthcheck defaulting on when ENABLE_HEALTH_PORT set
 
 ## v1.2 (later)
 
