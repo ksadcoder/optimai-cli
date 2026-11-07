@@ -135,6 +135,11 @@ class Supervisor:
         """Return the circuit breaker consecutive crash threshold."""
         return CRASH_LIMIT
 
+    
+    def format_summary(self) -> str:
+        """Return a single-line summary of supervisor state."""
+        return f"desired={self.desired} running={self.running} crashes={self._consecutive_crashes}"
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
