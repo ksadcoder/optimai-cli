@@ -118,7 +118,11 @@ class Config:
         if port_raw:
             health_port = _parse_int(port_raw, "ENABLE_HEALTH_PORT", 8080, log)
             if health_port is not None and not (1 <= health_port <= 65535):
-                log(f"ENABLE_HEALTH_PORT={health_port} out of range 1-65535; falling back to 8080")
+                if log:
+                    if callable(log):
+                        log(f"ENABLE_HEALTH_PORT={health_port} out of range 1-65535; falling back to 8080")
+                    elif hasattr(log, "warning"):
+                        log.warning("ENABLE_HEALTH_PORT=%s out of range 1-65535; falling back to 8080", health_port)
                 health_port = 8080
 
         # --- hosting-provider mode ---
