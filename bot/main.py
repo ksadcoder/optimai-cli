@@ -30,6 +30,7 @@ from telegram.ext import (
 )
 
 import bot
+_BOT_START_TIME = time.time()
 from bot.config import Config, ConfigError
 from bot.gatekeeper import UnauthorizedGate
 from bot.login_session import LoginManager
@@ -376,7 +377,7 @@ async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await _reply(
         update,
         "ℹ️ <b>Versions</b>\n"
-        f"Bot: OptimAI Telegram Node v{bot.__version__} (rev {_get_git_rev()})\n"
+        f"Bot: OptimAI Telegram Node v{bot.__version__} (online: {_format_timestamp(_BOT_START_TIME)}) (rev {_get_git_rev()})\n"
         f"CLI: {html.escape(cli_version)}",
     )
 
