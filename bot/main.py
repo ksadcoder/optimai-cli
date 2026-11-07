@@ -130,6 +130,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/cancel — cancel the pending /login session\n"
         "/version — bot + CLI versions\n"
         "/ping — test bot responsiveness\n"
+        "/uptime — node supervisor uptime and state\n"
         "/id — (anyone) your numeric Telegram ID\n"
     )
     await _reply(update, help_text)
@@ -362,6 +363,17 @@ async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
+
+async def cmd_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    snap = sup.snapshot()
+    await _reply(
+        update,
+        f"⏱️ <b>Uptime:</b> {snap['uptime']}\n"
+        f"<b>Desired state:</b> <code>{snap['desired']}</code>\n"
+        f"<b>Total crashes:</b> {snap['crashes']}",
+    )
+
 async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _reply(update, "🏓 <b>Pong!</b> Bot control-plane is responsive.")
 
@@ -526,6 +538,7 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("cancel", cmd_cancel, filters=admin_filter),
         CommandHandler("version", cmd_version, filters=admin_filter),
         CommandHandler("ping", cmd_ping, filters=admin_filter),
+        CommandHandler("uptime", cmd_uptime, filters=admin_filter),
         # 2. /id — OPEN to everyone (registered before the text handlers)
         CommandHandler("id", cmd_id),
         # 3. admin plain text -> login paste
