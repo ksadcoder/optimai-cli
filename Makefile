@@ -49,3 +49,7 @@ clean:
 
 diag:
 	bash scripts/system-info.sh
+
+validate:
+	.venv/bin/python -m py_compile bot/*.py
+	.venv/bin/python tests/smoke_test.py
