@@ -1,4 +1,4 @@
-# OptimAI Telegram Node v1.1.0
+# ⛏️ OptimAI Telegram Node v1.1.0
 
 ![CI](https://github.com/mkr-infinity/optimai-cli/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
@@ -6,9 +6,8 @@
 ![Version](https://img.shields.io/badge/version-1.1.0-orange)
 [![Telegram](https://img.shields.io/badge/contact-%40mkr__infinity-blue)](https://t.me/mkr_infinity)
 
-**Your 24/7 OptimAI Network node, controlled entirely from Telegram** — start it, stop it, restart it,
- read live logs, check rewards, even log in, all with simple commands on your phone. If the node
- crashes at 3 AM, the bot restarts it automatically and DMs you.
+> 🚀 **Your 24/7 OptimAI Network node, controlled entirely from Telegram.**
+> Start, stop, monitor rewards, view live logs, and authenticate directly from your phone. If the node crashes at 3 AM, the bot restarts it automatically and alerts you.
 
 ```
 ┌──────────┐  long-polling   ┌────────────────────┐  subprocess   ┌──────────────┐  docker.sock  ┌─────────────┐
@@ -17,237 +16,224 @@
 └──────────┘                 └────────────────────┘               └──────────────┘               └─────────────┘
 ```
 
-> ⚠️ An unauthorized stranger who messages the bot gets a short, rate-limited promo reply pointing to
- **@mkr_infinity** for paid node hosting — this is a hosting-provider deployment.
+> 🎁 **Need an OptimAI account?**
+> 👉 **[Register Here with Referral Code 646D12E7](https://node.optimai.network/register?ref=646D12E7)**
 
 ---
 
-## 1. What is this
+## 1. What is This?
 
-`optimai-telegram-node` is a Dockerized Python Telegram bot that runs the **OptimAI CLI node** 24/7 on
- a VPS and gives the owner full remote control from Telegram: `/start_node`, `/stop_node`,
-`/restart_node`, `/status`, `/rewards`, `/logs`, `/watch`, and a browserless `/login` flow. A built-in
- desired-state supervisor (`state.json`) guarantees crash auto-restart with exponential backoff, a
- circuit breaker, and persistent stops. The same repo deploys to **Railway** for testing
- (bot control-plane only — see the honest appendix; the node workload itself needs a VPS with Docker).
+`optimai-telegram-node` is a lightweight, Dockerized Python bot designed to manage an **OptimAI Network Node** remotely.
+
+* **24/7 Uptime**: Automatic crash restart with exponential backoff & circuit breaker.
+* **Full Remote Control**: 19 commands covering `/status`, `/rewards`, `/logs`, `/watch`, `/login`, and more.
+* **Persistent State**: Reboots and Docker rebuilds will **never** lose your login or desired node state.
+* **Hosting Mode**: Built-in rate limiter that turns unauthorized messages into a paid hosting funnel to **@mkr_infinity**.
+* **Dual Deployment**: Runs on any cheap **Linux VPS** (for mining) or **Railway** (for bot testing/control-plane).
+
+---
 
 ## 2. Prerequisites
 
-- **VPS** (recommended): €4-6/month — Hetzner, Contabo, RackNerd — Ubuntu 22.04/24.04, 2 GB+ RAM,
-15-20 GB disk, **or** a [Railway](https://railway.com) account for bot-only testing
-- A **Telegram account**
-- An **OptimAI account** (register at https://node.optimai.network)
-- A bot created with **@BotFather** (takes 2 minutes)
-
-## 3. Quickstart — VPS Setup
-
-Deploy to Ubuntu 22.04+ in under 5 minutes:
-
-1. **Clone repository to VPS**:
-   ```bash
-   git clone https://github.com/mkr-infinity/optimai-cli.git && cd optimai-cli
-   ```
-2. **Run host provisioning**:
-   ```bash
-   bash setup-vps.sh
-   ```
-   *(Installs Docker, configures 2GB swap, sets up data directory permissions)*
-3. **Configure environment**:
-   ```bash
-   cp .env.example .env
-   # Set TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_IDS
-   ```
-4. **Launch container**:
-   ```bash
-   docker compose up -d --build
-   ```
-5. **Verify**:
-   Send `/status` to your bot in Telegram to verify the node is running.
-
-> 📖 **Full Guide**: See [docs/DEPLOY-VPS.md](docs/DEPLOY-VPS.md) for step-by-step VPS walkthroughs and [docs/DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md) for Railway control-plane deployment.
-
-## 4. Configuration
-
-The bot is configured via `.env`. Key variables:
-
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | Yes | — | Bot token from [@BotFather](https://t.me/BotFather) |
-| `TELEGRAM_ALLOWED_IDS` | Yes | — | Comma-separated admin Telegram user IDs |
-| `ENABLE_HEALTH_PORT` | No | `""` | TCP port for HTTP health checks (e.g. `8080`) |
-| `NODE_AUTO_START` | No | `true` | Auto-start node process on boot |
-
-For the complete dictionary of all options (timeouts, promo limits, paths), see **[docs/ENV-VARS.md](docs/ENV-VARS.md)**.
-
-## 5. Commands
-
-| Command | Who | What it does |
+| Requirement | Purpose | Recommendation |
 |---|---|---|
-| `/help` | admin | list all commands |
-| `/status` | admin | running/stopped + uptime, desired state, auth, docker, crashes/backoff/breaker |
-| `/start_node` | admin | start the node (errors honestly on Railway) — closes the circuit breaker |
-| `/stop_node` | admin | **persistent** stop: stays stopped after reboot until `/start_node` |
-| `/restart_node` | admin | stop + start; also closes the circuit breaker |
-| `/rewards` | admin | OptimAI rewards balance (raw CLI output) |
-| `/logs` | admin | last 40 lines of `node.log` |
-| `/watch [seconds]` | admin | LIVE tail of `node.log` for 10-600 s (default 120) |
-| `/login` | admin | OptimAI login: open URL → sign in → paste redirect URL back |
-| `/auth_status` | admin | CLI auth status text |
-| `/me` | admin | your Telegram ID + name, admin yes/no |
-| `/cancel` | admin | cancel a pending `/login` session |
-| `/version` | admin | bot + CLI versions |
-| `/ping` | admin | test bot responsiveness and latency |
-| `/uptime` | admin | bot + supervisor uptime and node state |
-| `/disk` | admin | storage volume disk usage and free space |
-| `/system` | admin | OS, Python runtime, and host resource diagnostics |
-| `/healthcheck` | admin | subsystem health validation (supervisor, config, store) |
-| `/id` | **anyone** | your numeric Telegram ID (unauthorized users' `/id` also counts toward their promo budget) |
+| **OptimAI Account** | Earning points & mining | **[Register (Ref: 646D12E7)](https://node.optimai.network/register?ref=646D12E7)** |
+| **Linux VPS** | Running node 24/7 with Docker | €3–5/mo Ubuntu 22.04/24.04 (Hetzner, RackNerd, Contabo) |
+| **Telegram Account** | Controlling your bot | Free |
+| **Telegram Bot** | Interfacing with the server | Free via [@BotFather](https://t.me/BotFather) |
 
-## 6. How the 24/7 guarantee works
+---
 
-Three stacked layers:
+## 3. Beginner Quickstart: 5 Steps to 24/7 Mining
 
-1. **Docker restart policy** — `restart: unless-stopped` restarts the whole container after crashes,
-host reboots, and daemon restarts (on Railway: the `ON_FAILURE` policy in `railway.json`).
-2. **Supervisor** — a 5 s watch loop tracks the `optimai-cli node start` process. If it dies while
-the desired state is `running`, the bot instantly alerts you with the last 15 log lines and restarts
-with exponential backoff: **5s → 15s → 60s → 300s**.
-3. **Circuit breaker** — after **5 consecutive crashes**, auto-restart STOPS and you get ONE alert
-("Fix the issue, then send /restart_node"). This prevents infinite crash-loop noise.
+Follow these 5 simple steps to get your node running in under 5 minutes.
 
-The desired state lives in `data/state.json` (atomic writes), so memory of "running" vs "stopped"
-survives container restarts **and VPS reboots**:
+### 🔹 Step 1: Create Your Telegram Bot
+1. Open Telegram and search for [@BotFather](https://t.me/BotFather).
+2. Send `/newbot`, give it a name and username (e.g. `MyOptimAINodeBot`).
+3. Copy the **HTTP API Token** (format: `123456789:ABCdefGhI...`).
 
-- A node you stopped **stays stopped** after a reboot — by design, so an unwanted earning process
-never silently resurrects.
-- A running node **auto-resumes** on boot (when authenticated and `NODE_AUTO_START=true`).
+### 🔹 Step 2: Get Your Telegram User ID
+1. Message [@userinfobot](https://t.me/userinfobot) on Telegram.
+2. Note your numeric **Id** (e.g. `123456789`).
 
-## 7. Hosting-provider mode (promo funnel)
+### 🔹 Step 3: Connect to Your VPS
+Open a terminal on your computer and connect to your server:
+```bash
+ssh root@YOUR_VPS_IP
+```
 
-Unauthorized strangers who message the bot get:
+### 🔹 Step 4: Clone & Run Setup
+Copy and paste this command block into your server:
+```bash
+# 1. Clone this repository
+git clone https://github.com/mkr-infinity/optimai-cli.git && cd optimai-cli
+
+# 2. Run one-shot preparation (installs Docker Engine & sets up 2GB swap)
+sudo bash setup-vps.sh
+
+# 3. Create your configuration
+cp .env.example .env
+nano .env
+```
+In `nano`, fill in your two required values:
+```env
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGhI...
+TELEGRAM_ALLOWED_IDS=123456789
+```
+*(Press `Ctrl + O` then `Enter` to save, and `Ctrl + X` to exit).*
+
+### 🔹 Step 5: Start the Container & Login
+Launch your bot:
+```bash
+docker compose up -d --build
+```
+
+Now open Telegram and talk to your bot:
+1. Send `/login` — click the **Open login page** button.
+2. Sign in with your [OptimAI account](https://node.optimai.network/register?ref=646D12E7).
+3. Copy the final redirect URL from your browser address bar and paste it into the Telegram chat.
+4. Send `/status` or `/start_node` to begin earning! ⛏️
+
+---
+
+## 4. Bot Commands
+
+| Command | Allowed Users | Description |
+|---|---|---|
+| `/help` | Admin | Show this list of commands |
+| `/status` | Admin | Live status: running state, uptime, auth, crashes, circuit breaker |
+| `/start_node` | Admin | Start the node process (persists across reboots) |
+| `/stop_node` | Admin | Stop the node process (stays stopped until `/start_node`) |
+| `/restart_node` | Admin | Restart node & reset the circuit breaker |
+| `/rewards` | Admin | Display current OptimAI points & rewards balance |
+| `/logs` | Admin | View the last 40 lines of `node.log` |
+| `/watch [sec]` | Admin | Live streaming log tail (default 120s, range 10–600s) |
+| `/login` | Admin | Start headless OAuth login flow (with ref registration link) |
+| `/auth_status` | Admin | Check if node is authenticated |
+| `/me` | Admin | Display your Telegram user info & admin privileges |
+| `/cancel` | Admin | Cancel an active `/login` session |
+| `/version` | Admin | Show bot and CLI release versions |
+| `/ping` | Admin | Check bot responsiveness & latency |
+| `/uptime` | Admin | View bot and node supervisor uptime |
+| `/disk` | Admin | View VPS volume storage usage |
+| `/system` | Admin | System diagnostics (OS, Python version, CPU, RAM) |
+| `/healthcheck` | Admin | Test internal subsystems (supervisor, store, config) |
+| `/id` | **Everyone** | Show numeric Telegram ID (budgeted for strangers) |
+
+---
+
+## 5. Configuration Reference (`.env`)
+
+| Variable | Required? | Default | Description |
+|---|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | **Yes** | — | Bot token from [@BotFather](https://t.me/BotFather) |
+| `TELEGRAM_ALLOWED_IDS` | **Yes** | — | Comma-separated admin Telegram IDs |
+| `NODE_AUTO_START` | No | `true` | Auto-start mining node on boot if desired=running |
+| `LOG_TAIL_LINES` | No | `40` | Number of lines returned by `/logs` |
+| `WATCH_SECONDS` | No | `120` | Default streaming duration for `/watch` |
+| `LOGIN_TTL_MINUTES` | No | `15` | Minutes before an uncompleted `/login` expires |
+| `ENABLE_HEALTH_PORT` | No | `""` | Optional HTTP health port (`GET /health -> 200 OK`) |
+| `CONTACT_USERNAME` | No | `mkr_infinity` | Telegram handle displayed to unauthorized strangers |
+| `UNAUTH_MAX_MESSAGES` | No | `3` | Max replies a stranger receives before permanent mute |
+
+*(See [docs/ENV-VARS.md](docs/ENV-VARS.md) for full catalog).*
+
+---
+
+## 6. How the 24/7 Guarantee Works
+
+Your node stays online through 3 automated protection layers:
 
 ```
+┌────────────────────────────────────────────────────────┐
+│  Layer 1: Docker Restart Policy (unless-stopped)       │  → Resurrects container on host reboot
+├────────────────────────────────────────────────────────┤
+│  Layer 2: Desired-State Supervisor (state.json)        │  → Auto-restarts node process on crash
+├────────────────────────────────────────────────────────┤
+│  Layer 3: Circuit Breaker (5 consecutive crash limit)  │  → Prevents spam; alerts owner to fix
+└────────────────────────────────────────────────────────┘
+```
+
+* **Crash Recovery**: If the node process crashes, the supervisor restarts it with exponential backoff: **5s → 15s → 60s → 300s**.
+* **Circuit Breaker**: After 5 consecutive failures, auto-restart pauses and sends an alert so you can check `/logs`. Sending `/restart_node` resets the breaker.
+* **Persistent Stop**: If you send `/stop_node`, the node **stays stopped** even if the VPS restarts. It will never silently resurrect unless you send `/start_node`.
+
+---
+
+## 7. Hosting Provider Mode (Promo Funnel)
+
+When strangers find your bot and message it, they receive:
+```text
 ⛔️ You are not authorized to use this bot.
 
 To host your own OptimAI node server (paid), contact @mkr_infinity.
 ```
+* **Anti-Spam Guarantee**: Each unauthorized user has a lifetime reply budget (default: 3 replies). Once exhausted, they are permanently muted.
+* Settings are fully configurable via `CONTACT_USERNAME`, `UNAUTHORIZED_MESSAGE`, and `UNAUTH_MAX_MESSAGES`.
 
-Configured by `CONTACT_USERNAME`, an optional full-text `UNAUTHORIZED_MESSAGE` override
-(`{contact}` placeholder supported), and `UNAUTH_MAX_MESSAGES`.
+---
 
-**Anti-spam guarantee:** each stranger has a total reply budget (default **3 ever**), persisted in
-`data/unauth_counts.json` across restarts. After their 3 replies they are muted **forever** until
-you delete the file. `0` = fully silent mode. Even a stranger's `/id` counts toward their budget.
+## 8. Railway Deployment (Control-Plane Only)
 
-## 8. Railway appendix (Deployment B — bot control-plane only)
+> [!NOTE]
+> Railway containers do not include a host Docker daemon (`docker.sock`). On Railway, the bot operates in **control-plane mode**: `/login`, `/rewards`, `/logs`, `/status`, and `/healthcheck` work 100%, but `/start_node` will honestly report that Docker is unreachable. Use a VPS for actual mining.
 
-**Honest reality check.** Railway containers get **no `/var/run/docker.sock`** and no privileged mode.
-`optimai-cli node start` launches workload containers through the host Docker daemon — that's exactly
-what cannot exist on Railway (Docker-in-Docker needs privileged mode and is a non-goal here). So:
+### Quick Deploy to Railway:
+1. Connect this repo to [Railway](https://railway.com).
+2. Set Environment Variables:
+   * `TELEGRAM_BOT_TOKEN` = `your_token`
+   * `TELEGRAM_ALLOWED_IDS` = `your_id`
+   * `NODE_AUTO_START` = `false`
+3. **Add Volume**: Under your service, add a Volume mounted at `/data` (required to save login state).
+4. Deploy! The included [`Procfile`](Procfile) will run the bot as a background worker.
 
-| On Railway | Works? |
-|---|---|
-| `/login`, `/auth_status`, `/rewards`, `/logs`, `/status`, `/help`, `/me`, `/cancel`, `/version`, `/ping`, `/uptime`, `/disk`, `/system`, `/healthcheck`, `/id` | ✅ yes |
-| Promo gatekeeping, boot message, 24/7 keep-alive (Railway ON_FAILURE policy + supervisor) | ✅ yes |
-| `/start_node`, `/stop_node`, `/restart_node`, `/watch` | ❌ **fails by design** — the bot returns the honest error: "no Docker daemon here" |
-
-The bot self-detects the missing daemon at startup and in `/status` (`docker version` against the
-absent socket) and warns openly instead of failing mysteriously. **The warning IS the feature.**
-
-**Deploy steps:**
-
-1. Push/connect the repo to Railway (GitHub) — or **no-git path**:
-   ```bash
-   npm i -g @railway/cli
-   railway login
-   railway init
-   railway up
-   ```
-   (CLI uploads the local directory; nothing is pushed to git.)
-2. Variables tab (dashboard): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_IDS`, `NODE_AUTO_START=true`,
-`TZ=Asia/Kolkata` (optionally `ENABLE_HEALTH_PORT` if you need a web service + healthcheck).
-3. **Create a Volume** mounted at `/data` and attach it to the service — without it, login + state
-are wiped on every deploy.
-4. Use the **Procfile**: deploy as a *Worker* service (`worker: python -m bot.main`) — long polling is
-outbound-only, no public port needed. If deployed as a *Web* service, the bot automatically binds to Railway's dynamic `$PORT` (or `ENABLE_HEALTH_PORT`) for HTTP health checks (`GET /health -> 200 OK`).
-
-**Cost:** Railway is usage-based — a small always-on worker is typically **~USD 10-20/month**, and it
-can't even run the node. A flat **~EUR 4-6/month VPS** runs bot AND node. → **Railway is for testing
-the bot or separating the control-plane; the VPS is the real solution.**
+---
 
 ## 9. Troubleshooting
 
-Quick diagnostics for everyday operational incidents:
+| Issue | Cause | Fix |
+|---|---|---|
+| `Not authenticated` error | Session expired or first run | Run `/login` and paste the redirect URL |
+| Bot not responding | Invalid token or network down | Check `TELEGRAM_BOT_TOKEN` and run `docker compose logs -f` |
+| `no Docker daemon here` | Running on Railway or socket unmounted | Normal on Railway; on VPS check `/var/run/docker.sock` mount |
+| Node stopped unexpectedly | Crashed 5 times in a row | Send `/logs` to see the error, fix it, then send `/restart_node` |
+| Outdated CLI warning | Upstream released an update | Run `docker compose build --no-cache && docker compose up -d` |
 
-- **Authentication lost**: Run `/login` to paste a fresh login session.
-- **Bot unresponsive**: Verify `TELEGRAM_BOT_TOKEN` in `.env` and inspect `docker compose logs -f`.
-- **Node crash-looping**: The supervisor opens the circuit breaker after 5 consecutive crashes. Inspect the tail via `/logs`, fix the root cause, and run `/restart_node`.
-- **Docker socket permission**: Ensure the socket `/var/run/docker.sock` is mounted and readable.
-- **CLI update notice**: When `/status` reports an upstream update, update the binary on the host VPS.
+*(See [docs/RUNBOOK.md](docs/RUNBOOK.md) for in-depth incident recovery).*
 
-> 📖 **Deep Dive**: For comprehensive triage and operational recovery steps, see [docs/RUNBOOK.md](docs/RUNBOOK.md) and [docs/ERROR-CATALOG.md](docs/ERROR-CATALOG.md).
+---
 
-## 10. Growth ideas
+## 10. Growth Ideas
 
-- **Multi-node fleet** — one bot supervising several nodes/regions with per-owner billing IDs
-- **Metrics dashboard** — uptime/balance history charts per client (the `/status` snapshot already
-has the data)
-- **Auto-claim rewards** — scheduled `rewards balance` scraping with balance-change alerts
-- **Client billing** — per-client Telegram IDs + automated monthly rental invoices (UPI:
-`mkr-infinity@ybl`)
-- **Referral funnel** — the promo reply could carry a tracking link and reply with a trial discount
+* **Multi-Node Fleet**: Manage 10+ node servers across different providers from a single Telegram channel.
+* **Auto-Claim Rewards**: Automate periodic rewards balance scrapes and daily balance summaries.
+* **Client Hosting Service**: Charge clients monthly hosting fees to run nodes for them under your referral code.
 
-## 11. Security notes
+---
 
-- **Never commit `.env`** — it's gitignored; the token is a live credential.
-- **Rotate the token** if it leaks: @BotFather → `/revoke` → update `.env` → restart.
-- **Keep `TELEGRAM_ALLOWED_IDS` minimal** — every ID in it can stop/start your earning node.
-- The bot only makes **outbound** connections (Telegram long-polling) — no inbound ports need
-opening; the VPS firewall can stay strict.
-- State lives on the `./data` volume — treat it like credentials (the login session is in there).
-- All code changes pass automated smoke suites and pair co-author verification before merge.
+## 11. Security Checklist
 
+* 🔒 **Never commit `.env`** — it contains your live Telegram token.
+* 🔒 **Keep `TELEGRAM_ALLOWED_IDS` minimal** — anyone in this list can control your node.
+* 🔒 **Strict Firewall** — The bot only uses outbound polling; no open inbound server ports are needed.
+
+---
 
 ## 12. Documentation Index
 
-The `docs/` directory contains deep-dive references for operators and architects:
+Detailed guides are available in the [`docs/`](docs/) directory:
 
-| Document | Focus |
-|---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Component diagrams, lifecycle, IPC and process isolation |
-| [MAINTENANCE.md](docs/MAINTENANCE.md) | Routine maintenance, volume pruning, and troubleshooting runbook |
-| [DAILY-OPS.md](docs/DAILY-OPS.md) | Daily health verification and status monitoring checklist |
-| [PERFORMANCE.md](docs/PERFORMANCE.md) | CPU/RAM footprints, swap configuration, and VPS sizing |
-| [MULTI-OWNER.md](docs/MULTI-OWNER.md) | Architecture design for multi-tenant and multi-node hosting |
-| [HOSTING-PACKAGES.md](docs/HOSTING-PACKAGES.md) | Commercial packaging and pricing model for VPS node hosting |
-| [PROMO-FUNNEL.md](docs/PROMO-FUNNEL.md) | Mechanics of the unauth rate limiter and conversion funnel |
-| [MIGRATION.md](docs/MIGRATION.md) | Step-by-step checklist for migrating from Railway to VPS |
-| [RELEASE-POLICY.md](docs/RELEASE-POLICY.md) | Semantic versioning, tagging conventions, and deprecation policy |
-| [DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md) | Backup, recovery, host replacement, and credential restore |
-| [THREAT-MODEL.md](docs/THREAT-MODEL.md) | Threat vectors, trust boundaries, and credential safeguards |
-| [COSTS.md](docs/COSTS.md) | Detailed cost-benefit breakdown across VPS providers |
-| [SSH-PRACTICES.md](docs/SSH-PRACTICES.md) | Hardening SSH access for non-root production hosts |
-| [GLOSSARY.md](docs/GLOSSARY.md) | Definitions of terminology across OptimAI and the bot |
-| [FAQ.md](docs/FAQ.md) | Frequently asked operator questions and answers |
-| [RUNBOOK.md](docs/RUNBOOK.md) | Incident triage scenarios for crash loops and socket issues |
-| [METRICS.md](docs/METRICS.md) | TCP health check endpoints and supervisor metrics dictionary |
-| [BACKUP-RESTORE.md](docs/BACKUP-RESTORE.md) | Automated daily cron backup and restore procedure |
-| [ENV-VARS.md](docs/ENV-VARS.md) | Complete catalog of environment variables and defaults |
-| [UPGRADING.md](docs/UPGRADING.md) | Zero data-loss upgrade runbook and rollback steps |
-| [OBSERVABILITY.md](docs/OBSERVABILITY.md) | Telemetry, logging, and health port reference |
-| [SYSTEMD.md](docs/SYSTEMD.md) | Alternative systemd native service deployment |
-| [STORAGE.md](docs/STORAGE.md) | Volume persistence and filesystem state specs |
-| [SECURITY-CHECKLIST.md](docs/SECURITY-CHECKLIST.md) | Production security hardening checklist |
-| [API.md](docs/API.md) | Internal HTTP healthcheck endpoint specs |
-| [COMPARISON.md](docs/COMPARISON.md) | Comparison matrix against tmux and systemd deployments |
-| [TESTING.md](docs/TESTING.md) | Test harness design and smoke test execution guide |
-
+* [DEPLOY-VPS.md](docs/DEPLOY-VPS.md) — Complete VPS setup and hardening guide
+* [DEPLOY-RAILWAY.md](docs/DEPLOY-RAILWAY.md) — Railway configuration and control-plane deployment
+* [ENV-VARS.md](docs/ENV-VARS.md) — Complete dictionary of all environment variables
+* [RUNBOOK.md](docs/RUNBOOK.md) — Operator troubleshooting and incident response runbook
+* [ARCHITECTURE.md](docs/ARCHITECTURE.md) — Architecture diagrams and IPC specs
+* [MAINTENANCE.md](docs/MAINTENANCE.md) — Routine volume pruning and health tasks
 
 ---
 
 ### Attribution
 
-**OptimAI Telegram Node v1.1.0** — built by **Mohammad Kaif Raja (mkr-infinity)**
-[Telegram @mkr_infinity](https://t.me/mkr_infinity) · [Support](https://buymeacoffee.com/mkr_infinity) ·
-UPI `mkr-infinity@ybl`. Unauthorized modification, redistribution, or commercial sale is prohibited
-without prior written permission. Personal use permitted.
+**OptimAI Telegram Node v1.1.0** — Created by **Mohammad Kaif Raja (mkr-infinity)**
+[Telegram @mkr_infinity](https://t.me/mkr_infinity) · [Support](https://buymeacoffee.com/mkr_infinity) · UPI: `mkr-infinity@ybl`

@@ -314,13 +314,17 @@ async def cmd_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
     keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton("Open login page", url=url)]]
+        [
+            [InlineKeyboardButton("🔑 Open login page", url=url)],
+            [InlineKeyboardButton("✨ Register (Ref: 646D12E7)", url="https://node.optimai.network/register?ref=646D12E7")],
+        ]
     )
     await _reply(
         update,
         "🔑 Open the login page, sign in to your OptimAI account, then copy the "
         "final redirect URL and paste it here. This session expires in "
-        f"{cfg.login_ttl_minutes} minutes.",
+        f"{cfg.login_ttl_minutes} minutes.\n\n"
+        "Need an account? Tap <b>Register</b> below.",
         keyboard,
     )
 

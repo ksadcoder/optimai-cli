@@ -8,7 +8,7 @@ README (§ Beginner guide). Target: a fresh Ubuntu 22.04/24.04 box, EUR 4-6/mo
 
 - VPS IP + root password / SSH key
 - Telegram bot token (from @BotFather)
-- OptimAI account (https://node.optimai.network)
+- OptimAI account ([register with ref 646D12E7](https://node.optimai.network/register?ref=646D12E7))
 - THIS folder on your PC
 
 ## 1. Ship the project to the VPS
