@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """OptimAI Telegram Node — a Telegram-controlled OptimAI CLI node supervisor.
 
 Package marker, version metadata, and the application startup banner.

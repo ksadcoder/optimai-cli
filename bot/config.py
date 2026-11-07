@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Environment configuration with fail-fast validation.
 
 Loads a `Config` from environment variables (a `.env` file is NOT parsed here;

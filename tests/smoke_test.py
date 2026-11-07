@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 #!/usr/bin/env python3
 """Smoke test suite for optimai-telegram-node (v1.0.0).
 
