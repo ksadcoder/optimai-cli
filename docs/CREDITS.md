@@ -24,7 +24,7 @@ permitted. Unauthorized removal of attribution is strictly prohibited.
 | Python | 3.12 (image `python:3.12-slim`) | PSF | runtime |
 | Docker CLI static client | 27.3.1 (best-effort ARG) | Apache-2.0 | daemon connectivity check |
 
-##_upstream
+## Upstream
 
 | Project | Relation |
 |---|---|
