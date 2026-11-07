@@ -24,9 +24,9 @@ uv venv --python 3.12 && uv pip install --python .venv/bin/python \
 ## How to test (no network, no real Telegram needed)
 
 ```bash
-.venv/bin/python tests/smoke_test.py     # standalone: 80 checks
-pytest                                   # CI-style wrapper
-python -m py_compile bot/*.py
+make check                               # byte-compile + run 85-check suite
+make pytest                              # pytest runner
+make status                              # inspect branch and commit stats
 ```
 
 CI (`.github/workflows/ci.yml`) runs all three plus `docker compose config`
