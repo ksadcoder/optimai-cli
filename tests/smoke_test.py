@@ -157,6 +157,12 @@ check(
     "config: railway PORT parsed as fallback health port",
     Config.load(env=base_env(PORT="3000")).enable_health_port == 3000,
 )
+with open(os.path.join(ROOT, "railway.json"), encoding="utf-8") as rf:
+    railway_cfg = json.load(rf)
+check(
+    "railway: railway.json parses as valid JSON with DOCKERFILE builder",
+    railway_cfg.get("build", {}).get("builder") == "DOCKERFILE",
+)
 check(
     "config: data dir + optimai home created/resolved",
     os.path.isdir(cfg.data_dir) and cfg.optimai_home == os.path.abspath(cfg.optimai_home),
