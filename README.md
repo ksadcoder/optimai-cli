@@ -245,6 +245,30 @@ opening; the VPS firewall can stay strict.
 - State lives on the `./data` volume — treat it like credentials (the login session is in there).
 - Nothing is ever pushed to a remote by this repo's workflow; `git remote -v` is empty by design.
 
+
+## 12. Documentation Index
+
+The `docs/` directory contains deep-dive references for operators and architects:
+
+| Document | Focus |
+|---|---|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Component diagrams, lifecycle, IPC and process isolation |
+| [MAINTENANCE.md](docs/MAINTENANCE.md) | Routine maintenance, volume pruning, and troubleshooting runbook |
+| [DAILY-OPS.md](docs/DAILY-OPS.md) | Daily health verification and status monitoring checklist |
+| [PERFORMANCE.md](docs/PERFORMANCE.md) | CPU/RAM footprints, swap configuration, and VPS sizing |
+| [MULTI-OWNER.md](docs/MULTI-OWNER.md) | Architecture design for multi-tenant and multi-node hosting |
+| [HOSTING-PACKAGES.md](docs/HOSTING-PACKAGES.md) | Commercial packaging and pricing model for VPS node hosting |
+| [PROMO-FUNNEL.md](docs/PROMO-FUNNEL.md) | Mechanics of the unauth rate limiter and conversion funnel |
+| [MIGRATION.md](docs/MIGRATION.md) | Step-by-step checklist for migrating from Railway to VPS |
+| [RELEASE-POLICY.md](docs/RELEASE-POLICY.md) | Semantic versioning, tagging conventions, and deprecation policy |
+| [DISASTER-RECOVERY.md](docs/DISASTER-RECOVERY.md) | Backup, recovery, host replacement, and credential restore |
+| [THREAT-MODEL.md](docs/THREAT-MODEL.md) | Threat vectors, trust boundaries, and credential safeguards |
+| [COSTS.md](docs/COSTS.md) | Detailed cost-benefit breakdown across VPS providers |
+| [SSH-PRACTICES.md](docs/SSH-PRACTICES.md) | Hardening SSH access for non-root production hosts |
+| [GLOSSARY.md](docs/GLOSSARY.md) | Definitions of terminology across OptimAI and the bot |
+| [FAQ.md](docs/FAQ.md) | Frequently asked operator questions and answers |
+
+
 ---
 
 ### Attribution
