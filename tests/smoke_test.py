@@ -314,6 +314,7 @@ async def supervisor_checks() -> None:
         "desired", "running", "pid", "uptime", "last_exit_code",
         "crashes", "backoff_level", "breaker", "authenticated", "docker_ok", "last_crash_at",
     }
+    check("supervisor: format_summary returns valid string", "desired=" in sup.format_summary())
     check("supervisor: snapshot has all fields", expected_keys <= set(snap), str(snap.keys()))
 
     pid = await sup.request_start()
