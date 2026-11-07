@@ -75,3 +75,6 @@ help-all:
 check-all:
 	make check
 	bash scripts/check-git-clean.sh
+
+env-check:
+	@test -f .env && echo "[OK] .env exists" || echo "[WARN] .env missing"
