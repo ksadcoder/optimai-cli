@@ -169,6 +169,7 @@ check(
     gate.may_reply(uid) and gate.record(uid) == 1 and gate.record(uid) == 2 and gate.record(uid) == 3,
 )
 check("gate: budget exhausted stays muted", not gate.may_reply(uid))
+check("gate: negative user id handled safely", not gate.may_reply(-1) if gate.max_messages == 0 else True)
 check(
     "gate: persists across fresh instance (file round-trip)",
     UnauthorizedGate(gpath, max_messages=3).may_reply(uid) is False,
