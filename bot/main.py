@@ -132,6 +132,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/ping — test bot responsiveness\n"
         "/uptime — node supervisor uptime and state\n"
         "/disk — storage volume disk usage\n"
+        "/system — platform and runtime diagnostics\n"
         "/id — (anyone) your numeric Telegram ID\n"
     )
     await _reply(update, help_text)
@@ -390,6 +391,17 @@ async def cmd_disk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"Free: {free / gb:.1f} GB",
     )
 
+
+async def cmd_system(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    import platform, os
+    await _reply(
+        update,
+        "🖥️ <b>System diagnostics</b>\n"
+        f"Python: {platform.python_version()} ({platform.python_implementation()})\n"
+        f"OS: {platform.system()} {platform.release()} ({platform.machine()})\n"
+        f"PID: {os.getpid()}",
+    )
+
 async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _reply(update, "🏓 <b>Pong!</b> Bot control-plane is responsive.")
 
@@ -556,6 +568,7 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("ping", cmd_ping, filters=admin_filter),
         CommandHandler("uptime", cmd_uptime, filters=admin_filter),
         CommandHandler("disk", cmd_disk, filters=admin_filter),
+        CommandHandler("system", cmd_system, filters=admin_filter),
         # 2. /id — OPEN to everyone (registered before the text handlers)
         CommandHandler("id", cmd_id),
         # 3. admin plain text -> login paste
