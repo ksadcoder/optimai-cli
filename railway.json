@@ -1,0 +1,13 @@
+# ============================================================
+# optimai-telegram-node — Railway deploy config (Deployment B)
+# Railway's ON_FAILURE restart policy replaces the compose
+# `restart: unless-stopped` as the 24/7 layer on Railway.
+# NOTE: on Railway the node workload CANNOT run (no docker.sock,
+# no privileged mode) — only the bot control-plane.
+# ============================================================
+
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" },
+  "deploy": { "restartPolicyType": "ON_FAILURE", "restartPolicyMaxRetries": 10 }
+}
