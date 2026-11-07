@@ -393,6 +393,16 @@ async def cmd_disk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+
+def _get_proc_memory() -> str:
+    try:
+        import resource
+        rusage = resource.getrusage(resource.RUSAGE_SELF)
+        kb = rusage.ru_maxrss
+        return f"{kb / 1024:.1f} MB (max RSS)"
+    except Exception:
+        return "(unavailable)"
+
 async def cmd_system(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     import platform, os
     await _reply(
@@ -400,7 +410,7 @@ async def cmd_system(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         "🖥️ <b>System diagnostics</b>\n"
         f"Python: {platform.python_version()} ({platform.python_implementation()})\n"
         f"OS: {platform.system()} {platform.release()} ({platform.machine()})\n"
-        f"PID: {os.getpid()}",
+        f"PID: {os.getpid()}\nRAM: {_get_proc_memory()}",
     )
 
 
