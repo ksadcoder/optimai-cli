@@ -128,6 +128,10 @@ check(
     Config.load(env=base_env(LOG_TAIL_LINES="abc")).log_tail_lines == 40,
 )
 check(
+    "config: out-of-range ENABLE_HEALTH_PORT falls back to 8080",
+    Config.load(env=base_env(ENABLE_HEALTH_PORT="99999")).enable_health_port == 8080,
+)
+check(
     "config: contact default + builtin promo template",
     cfg.contact_username == "mkr_infinity"
     and "⛔️" in cfg.unauthorized_message
