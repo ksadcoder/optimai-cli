@@ -127,6 +127,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/auth_status — CLI auth status\n"
         "/me — your Telegram ID and name\n"
         "/cancel — cancel the pending /login session\n"
+        "/version — bot + CLI versions\n"
         "/id — (anyone) your numeric Telegram ID\n"
     )
     await _reply(update, help_text)
@@ -337,6 +338,18 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await _reply(update, "ℹ️ No pending login session.")
 
 
+async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    rc, out, err = await cli.run("--version", timeout=30)
+    cli_version = (out + err).strip() or f"(unknown, exit code {rc})"
+    await _reply(
+        update,
+        "ℹ️ <b>Versions</b>\n"
+        f"Bot: OptimAI Telegram Node v{bot.__version__}\n"
+        f"CLI: {html.escape(cli_version)}",
+    )
+
+
 async def cmd_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """OPEN TO EVERYONE (NOT admin-gated), but budgeted via the gate."""
     cfg, cli, sup, gate, _login = _wd(context)
@@ -495,6 +508,7 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("auth_status", cmd_auth_status, filters=admin_filter),
         CommandHandler("me", cmd_me, filters=admin_filter),
         CommandHandler("cancel", cmd_cancel, filters=admin_filter),
+        CommandHandler("version", cmd_version, filters=admin_filter),
         # 2. /id — OPEN to everyone (registered before the text handlers)
         CommandHandler("id", cmd_id),
         # 3. admin plain text -> login paste
