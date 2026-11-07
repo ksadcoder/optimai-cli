@@ -208,16 +208,15 @@ the bot or separating the control-plane; the VPS is the real solution.**
 
 ## 9. Troubleshooting
 
-| Symptom | Fix |
-|---|---|
-| `/node status` shows `Error: Not authenticated` / bot says auth no | send `/login`, redo the paste flow |
-| `docker compose logs` shows Docker permission denied | the socket mount needs the container to be root (default) — if you set `user:`, add the host `docker` group GID instead |
-| Bot completely silent | check token + allowed IDs in `.env`; run `docker compose logs -f` |
-| Commands sent while bot was down do nothing | by design: `drop_pending_updates=True` discards stale messages during downtime |
-| Railway `/status` warns "Docker daemon not reachable" | **expected** — control-plane only, see appendix 8 |
-| `/status` shows the "Important OptimAI CLI update available" warning | reinstall the CLI on the VPS host per the upstream README (it does not auto-fix via `optimai-cli update` alone) |
-| Node crash-loops | the bot pauses after 5 crashes; read the crash alert tail, fix root cause (RAM? disk?), then `/restart_node` |
-| After reboot node did NOT come back | check `state.json` desired state and `NODE_AUTO_START`; if you stopped it manually it stays stopped by design |
+Quick diagnostics for everyday operational incidents:
+
+- **Authentication lost**: Run `/login` to paste a fresh login session.
+- **Bot unresponsive**: Verify `TELEGRAM_BOT_TOKEN` in `.env` and inspect `docker compose logs -f`.
+- **Node crash-looping**: The supervisor opens the circuit breaker after 5 consecutive crashes. Inspect the tail via `/logs`, fix the root cause, and run `/restart_node`.
+- **Docker socket permission**: Ensure the socket `/var/run/docker.sock` is mounted and readable.
+- **CLI update notice**: When `/status` reports an upstream update, update the binary on the host VPS.
+
+> 📖 **Deep Dive**: For comprehensive triage and operational recovery steps, see [docs/RUNBOOK.md](docs/RUNBOOK.md) and [docs/ERROR-CATALOG.md](docs/ERROR-CATALOG.md).
 
 ## 10. Growth ideas
 
@@ -237,7 +236,7 @@ has the data)
 - The bot only makes **outbound** connections (Telegram long-polling) — no inbound ports need
 opening; the VPS firewall can stay strict.
 - State lives on the `./data` volume — treat it like credentials (the login session is in there).
-- Nothing is ever pushed to a remote by this repo's workflow; `git remote -v` is empty by design.
+- All code changes pass automated smoke suites and pair co-author verification before merge.
 
 
 ## 12. Documentation Index
