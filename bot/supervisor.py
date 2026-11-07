@@ -145,6 +145,11 @@ class Supervisor:
         """Return the number of consecutive crashes since last reset."""
         return self._consecutive_crashes
 
+    
+    def get_backoff_level(self) -> int:
+        """Return the current exponential backoff level index."""
+        return self._backoff_level
+
     def _load_desired(self) -> str:
         try:
             with open(self._state_path, "r", encoding="utf-8") as fh:
