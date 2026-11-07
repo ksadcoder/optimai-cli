@@ -1,0 +1,22 @@
+# Keep the Docker build context minimal: only the app code is needed
+# in the image (the Dockerfile copies requirements.txt and bot/).
+.git
+.gitignore
+.dockerignore
+.env
+data/
+tests/
+scripts/
+docs/
+README.md
+setup-vps.sh
+docker-compose.yml
+railway.json
+Procfile
+.railway/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+.DS_Store

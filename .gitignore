@@ -1,0 +1,21 @@
+# ============================================================
+# optimai-telegram-node - git ignore rules
+# ============================================================
+
+# Secrets: NEVER commit the real .env (it holds your bot token)
+.env
+
+# Runtime state: credentials, state.json, unauth_counts.json, node.log
+data/
+*.log
+
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS junk
+.DS_Store
+Thumbs.db

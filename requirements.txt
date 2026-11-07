@@ -1,0 +1,11 @@
+# ============================================================
+# optimai-telegram-node — pinned dependencies (Python 3.12)
+# ============================================================
+
+# Async Telegram bot framework (Application.builder(), CommandHandler,
+# MessageHandler, filters.User, post_init/post_shutdown, run_polling).
+python-telegram-bot==21.10
+
+# Drives the interactive `optimai-cli auth login --no-open --paste` flow
+# (print URL on the server, paste the redirect back into stdin).
+pexpect==4.9.0
