@@ -316,6 +316,7 @@ async def supervisor_checks() -> None:
     }
     check("supervisor: format_summary returns valid string", "desired=" in sup.format_summary())
     check("supervisor: get_consecutive_crashes helper returns int", isinstance(sup.get_consecutive_crashes(), int))
+    check("supervisor: get_backoff_level helper returns int", isinstance(sup.get_backoff_level(), int))
     check("supervisor: snapshot has all fields", expected_keys <= set(snap), str(snap.keys()))
 
     pid = await sup.request_start()
