@@ -24,7 +24,17 @@ Versioned, scope-honest plan. Deployed = merged to main and verified by CI.
 - [ ] CLI update notifier as its own admin alert (already in /status)
 - [ ] `/disk` and `docker stats`-inspired node resource snapshot command
 
-## v1.2 (later)
+## v1.2 (shipped)
+
+- [x] Dual authentication: direct email/password login and browser OAuth
+- [x] Upstream CLI update manager (`/update_cli`)
+- [x] Railway `$PORT` auto-binding for instant deployment health checks
+- [x] Official binary bundling in container image and host verification
+- [x] Local multi-OS bare-metal execution support with `./data` auto-fallback
+- [x] Referral registration link integration across Telegram and documentation
+- [x] Comprehensive 108-check offline verification suite
+
+## v1.3 (next)
 
 - [ ] Multi-node fleet: one bot supervising several nodes/regions
 - [ ] Metrics dashboard: uptime/balance history charts (web view off by default)
