@@ -48,8 +48,8 @@ clean:
 
 compose-config:
 	cp .env.example .env
-	sed -i "s/^TELEGRAM_BOT_TOKEN=$/TELEGRAM_BOT_TOKEN=000:dummy/" .env
-	sed -i "s/^TELEGRAM_ALLOWED_IDS=$/TELEGRAM_ALLOWED_IDS=123456789/" .env
+	sed -i "s/^TELEGRAM_BOT_TOKEN=$$/TELEGRAM_BOT_TOKEN=000:dummy/" .env
+	sed -i "s/^TELEGRAM_ALLOWED_IDS=$$/TELEGRAM_ALLOWED_IDS=123456789/" .env
 	docker compose config > /dev/null
 	rm .env
 

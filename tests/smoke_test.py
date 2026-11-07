@@ -517,6 +517,12 @@ check(
     "stub: no $3 positional flag check (uses loop over \"$@\")",
     '"$3"' not in stub_src and 'for arg in "$@"' in stub_src,
 )
+clean_env = {k: v for k, v in os.environ.items() if not k.startswith("TELEGRAM_")}
+p_noenv = subprocess.run([sys.executable, "-m", "bot.main"], cwd=ROOT, env=clean_env, capture_output=True, text=True)
+check(
+    "main: running bot.main without env exits 1 with CONFIG ERROR",
+    p_noenv.returncode == 1 and "CONFIG ERROR" in (p_noenv.stdout + p_noenv.stderr),
+)
 
 # ======================================================================
 print("\n" + "=" * 62)

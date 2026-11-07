@@ -16,6 +16,7 @@ import html
 import logging
 import os
 import sys
+import time
 from typing import Optional, Tuple
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
