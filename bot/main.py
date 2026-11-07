@@ -1,0 +1,547 @@
+"""Telegram wiring, command handlers, and the entrypoint.
+
+Handler order is bug-prone and implemented EXACTLY as specified:
+  1. all admin-gated CommandHandlers
+  2. `/id` CommandHandler with NO filter (open to everyone, budgeted)
+  3. admin-gated MessageHandler(filters.TEXT & ~filters.COMMAND)  # login paste
+  4. MessageHandler(~admin_filter, ANY) -> unauthorized_handler, registered
+     LAST in the same group 0.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import html
+import logging
+import os
+import sys
+from typing import Optional, Tuple
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ParseMode
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
+
+import bot
+from bot.config import Config, ConfigError
+from bot.gatekeeper import UnauthorizedGate
+from bot.login_session import LoginManager
+from bot.optimai import OptimaiCLI, read_new_chunk, tail_file
+from bot.supervisor import CRASH_LIMIT, Supervisor
+
+log = logging.getLogger("bot.main")
+
+CHAT_LIMIT = 4096          # Telegram hard limit per message
+SAFE_CHUNK = 3900          # room for tags/escapes inside <pre>
+DOCKER_DEAD_WARNING = (
+    "⚠️ Warning: Docker daemon not reachable in this environment - node "
+    "workloads cannot run here (e.g. Railway). The bot's other commands still "
+    "work. Run the node itself on a VPS (README, Deployment A)."
+)
+
+
+# ----------------------------------------------------------------------
+# Small helpers
+# ----------------------------------------------------------------------
+
+
+def _split_text(text: str, limit: int = SAFE_CHUNK) -> list[str]:
+    """Split to respect the Telegram 4096-char limit, preferring line breaks."""
+    text = text.strip()
+    if len(text) <= limit:
+        return [text] if text else []
+    parts: list[str] = []
+    while text:
+        if len(text) <= limit:
+            parts.append(text)
+            break
+        cut = text.rfind("\n", limit - 200, limit)
+        if cut <= 0:
+            cut = text.rfind(" ", 0, limit)
+        if cut <= 0:
+            cut = limit
+        parts.append(text[:cut])
+        text = text[cut:].lstrip("\n")
+    return parts
+
+
+async def _send_pre(message_target, text: str) -> None:
+    """Escape `text` and send it inside <pre> block(s), respecting 4096."""
+    text = text.strip()
+    if not text:
+        return
+    for part in _split_text(text):
+        await message_target(
+            f"<pre>{html.escape(part)}</pre>", parse_mode=ParseMode.HTML
+        )
+
+
+async def _reply(update: Update, text: str, keyboard: InlineKeyboardMarkup | None = None) -> None:
+    if not update.effective_message:
+        return
+    await update.effective_message.reply_text(
+        text, parse_mode=ParseMode.HTML, reply_markup=keyboard
+    )
+
+
+# ----------------------------------------------------------------------
+# Application dependencies (stored once in bot_data)
+# ----------------------------------------------------------------------
+
+
+def _wd(context: ContextTypes.DEFAULT_TYPE) -> Tuple[Config, OptimaiCLI, Supervisor, UnauthorizedGate, LoginManager]:
+    bd = context.bot_data
+    return bd["cfg"], bd["cli"], bd["sup"], bd["gate"], bd["login"]
+
+
+# ----------------------------------------------------------------------
+# Handlers
+# ----------------------------------------------------------------------
+
+
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, _cli, _sup, _gate, _login = _wd(context)
+    help_text = (
+        "<b>OptimAI Telegram Node — commands</b>\n\n"
+        "/help — show this list\n"
+        "/status — node running? uptime, auth, docker, crashes\n"
+        "/start_node — starts the optimai node (persistent)\n"
+        "/stop_node — persistent stop; survives reboots\n"
+        "/restart_node — stop + start, closes the circuit breaker\n"
+        "/rewards — OptimAI rewards balance\n"
+        "/logs — last lines of node.log\n"
+        "/watch [seconds] — live-tail node.log (10-600)\n"
+        "/login — OptimAI account login via paste flow\n"
+        "/auth_status — CLI auth status\n"
+        "/me — your Telegram ID and name\n"
+        "/cancel — cancel the pending /login session\n"
+        "/id — (anyone) your numeric Telegram ID\n"
+    )
+    await _reply(update, help_text)
+
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    authenticated = await cli.is_authenticated()
+    docker_ok, docker_ver = await cli.docker_server_version()
+    sup.update_health(authenticated, docker_ok)
+    snap = sup.snapshot()
+
+    node_line = f"running ({snap['uptime']}, PID {snap['pid']})" if snap["running"] else "stopped"
+    breaker_line = (
+        f"crashes: {snap['crashes']}/{CRASH_LIMIT} | backoff level: "
+        f"{snap['backoff_level']} | circuit breaker: {snap['breaker']}"
+    )
+    lines = [
+        "<b>Node status</b>",
+        f"Node: {node_line}",
+        f"Desired state: {snap['desired']}",
+        f"Authenticated: {'✅ yes' if snap['authenticated'] else '❌ no — run /login'}",
+        f"Docker: {'✅ reachable' if snap['docker_ok'] else '❌ NOT REACHABLE'}",
+        f"Last exit code: {snap['last_exit_code']}",
+        breaker_line,
+    ]
+    if not snap["docker_ok"]:
+        lines.append(DOCKER_DEAD_WARNING)
+    await _reply(update, "\n".join(lines))
+
+
+async def cmd_start_node(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    docker_ok, _ = await cli.docker_server_version()
+    if not docker_ok:
+        await _reply(
+            update,
+            "⛔️ Cannot start node: no Docker daemon here. Deploy on a VPS with "
+            "Docker (README, Deployment A). On Railway only the bot's "
+            "control-plane works (/login /rewards /logs /status).",
+        )
+        return
+    sup.close_breaker()
+    pid = await sup.request_start()
+    await _reply(
+        update,
+        f"🚀 Node starting (PID {pid}). Desired state: running. It will run 24/7 "
+        "and auto-restart on crashes. Check /status.",
+    )
+
+
+async def cmd_stop_node(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    docker_ok, _ = await cli.docker_server_version()
+    if not docker_ok and sup._pid() is None:
+        await _reply(
+            update,
+            "⛔️ Cannot control the node here: no Docker daemon (Railway "
+            "control-plane only; README, Deployment A).",
+        )
+        return
+    await sup.request_stop()
+    await _reply(
+        update,
+        "🛑 Node stopped. This persists: it will NOT come back after a reboot "
+        "until you send /start_node.",
+    )
+
+
+async def cmd_restart_node(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    docker_ok, _ = await cli.docker_server_version()
+    if not docker_ok:
+        await _reply(
+            update,
+            "⛔️ Cannot restart node: no Docker daemon here. Deploy on a VPS with "
+            "Docker (README, Deployment A). On Railway only the bot's "
+            "control-plane works (/login /rewards /logs /status).",
+        )
+        return
+    sup.close_breaker()
+    pid = await sup.restart()
+    await _reply(
+        update,
+        f"🔄 Node restarted (PID {pid}). Desired state: running. Circuit breaker "
+        "closed.",
+    )
+
+
+async def cmd_rewards(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    ok, text = await cli.rewards_balance()
+    body = text if text else "(empty response)"
+    if not ok and "Not authenticated" in body:
+        await _reply(
+            update,
+            f"<pre>{html.escape(body)}</pre>\n\n💡 Not authenticated — send /login first.",
+        )
+    else:
+        await _send_pre(lambda msg: _reply(update, msg), body)
+
+
+async def cmd_logs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    path = cfg.node_log_path()
+    lines = tail_file(path, cfg.log_tail_lines)
+    if not lines:
+        await _reply(update, "📝 node.log is empty.")
+        return
+    await _send_pre(lambda msg: _reply(update, msg), "\n".join(lines))
+
+
+async def cmd_watch(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    seconds = cfg.watch_seconds
+    if context.args:
+        try:
+            seconds = int(context.args[0])
+        except (ValueError, TypeError):
+            seconds = cfg.watch_seconds
+    seconds = max(10, min(600, seconds))
+
+    path = cfg.node_log_path()
+    try:
+        offset = os.path.getsize(path)
+    except OSError:
+        offset = 0
+
+    deadline = asyncio.get_running_loop().time() + seconds
+    sent_any = False
+    while True:
+        remaining = deadline - asyncio.get_running_loop().time()
+        if remaining <= 0:
+            break
+        chunk, offset = read_new_chunk(path, offset)
+        tail = chunk.strip()
+        if tail:
+            sent_any = True
+            for part in _split_text(tail):
+                await _send_pre(lambda msg: _reply(update, msg), part)
+        await asyncio.sleep(min(1.0, max(0.1, remaining)))
+    if sent_any:
+        await _reply(update, f"👁 Watch ended ({seconds}s). Freshest output delivered above.")
+    else:
+        await _reply(update, f"👁 Watch ended ({seconds}s). No new node output appeared.")
+
+
+async def cmd_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, login = _wd(context)
+    if await cli.is_authenticated():
+        await _reply(update, "✅ Already authenticated. Use /auth_status for details.")
+        return
+    url = await login.start()
+    if not url:
+        await _reply(
+            update,
+            "❌ Could not start the login flow (no URL captured from the CLI). "
+            "Check `docker compose logs -f` for details.",
+        )
+        return
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Open login page", url=url)]]
+    )
+    await _reply(
+        update,
+        "🔑 Open the login page, sign in to your OptimAI account, then copy the "
+        "final redirect URL and paste it here. This session expires in "
+        f"{cfg.login_ttl_minutes} minutes.",
+        keyboard,
+    )
+
+
+async def cmd_auth_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    rc, out, err = await cli.auth_status()
+    text = (out + err).strip() or f"(no output, exit code {rc})"
+    await _send_pre(lambda msg: _reply(update, msg), text)
+
+
+async def cmd_me(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, _login = _wd(context)
+    user = update.effective_user
+    if user is None:
+        return
+    is_admin = user.id in cfg.allowed_ids
+    await _reply(
+        update,
+        "👤 <b>Your account</b>\n"
+        f"ID: <code>{user.id}</code>\n"
+        f"Name: {html.escape(user.full_name)}\n"
+        f"Admin: {'✅ yes' if is_admin else '❌ no'}",
+    )
+
+
+async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, sup, _gate, login = _wd(context)
+    cancelled = await login.cancel()
+    if cancelled:
+        await _reply(update, "🚫 Pending login session cancelled.")
+    else:
+        await _reply(update, "ℹ️ No pending login session.")
+
+
+async def cmd_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """OPEN TO EVERYONE (NOT admin-gated), but budgeted via the gate."""
+    cfg, cli, sup, gate, _login = _wd(context)
+    user = update.effective_user
+    if user is None:
+        return
+    gate.record(user.id)
+    await _reply(
+        update,
+        f"🆔 Your Telegram ID: <code>{user.id}</code>. Send this ID to the bot "
+        "owner to get access.",
+    )
+
+
+async def on_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin plain text while a login session is pending = pasted redirect."""
+    cfg, cli, sup, _gate, login = _wd(context)
+    if not login.has_pending:
+        return  # ignore friendly chat
+    message = update.effective_message
+    if message is None or not message.text:
+        return
+    ok, summary = await login.submit(message.text)
+    header = (
+        "✅ Login successful — OptimAI session saved." if ok else "❌ Login failed:"
+    )
+    tail = summary[:1500]
+    await _reply(update, f"{header}\n\n<pre>{html.escape(tail)}</pre>")
+
+
+async def unauthorized_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Stranger message: promo reply with a persisted per-account budget."""
+    cfg, cli, sup, gate, _login = _wd(context)
+    user = update.effective_user
+    if user is None:
+        return
+    text = cfg.unauthorized_message  # {contact} already substituted in Config
+    if gate.may_reply(user.id):
+        gate.record(user.id)
+        if update.effective_message:
+            await update.effective_message.reply_text(text)
+        log.info("Promo reply sent to unauthorized user %s (count used +=1)", user.id)
+    else:
+        log.info("Silent: unauthorized user %s has no promo budget left", user.id)
+
+
+# ----------------------------------------------------------------------
+# Lifecycle hooks
+# ----------------------------------------------------------------------
+
+
+async def _post_init(app: Application) -> None:
+    cfg: Config = app.bot_data["cfg"]
+    cli: OptimaiCLI = app.bot_data["cli"]
+    sup: Supervisor = app.bot_data["sup"]
+    gate: UnauthorizedGate = app.bot_data["gate"]
+    login: LoginManager = app.bot_data["login"]
+
+    async def alert_fn(text: str) -> None:
+        for uid in sorted(cfg.allowed_ids):
+            try:
+                await app.bot.send_message(uid, text, parse_mode=ParseMode.HTML)
+            except Exception as exc:
+                log.warning("Crash alert to %s failed: %s", uid, exc)
+
+    # KNOWN FIX: alert_fn MUST be wired into the Supervisor here...
+    sup._alert_fn = alert_fn
+    login._alert_fn = alert_fn
+
+    # ...and the watch loop MUST be started.
+    await sup.start_loop()
+
+    # Optional health endpoint (platform healthchecks).
+    if cfg.enable_health_port:
+        server = await asyncio.start_server(_health_serve, "0.0.0.0", cfg.enable_health_port)
+        app.bot_data["health_server"] = server
+        log.info("Health port %s open (GET /health -> 200 OK)", cfg.enable_health_port)
+
+    # Platform health + auto-resume.
+    authenticated = await cli.is_authenticated()
+    docker_ok, docker_ver = await cli.docker_server_version()
+    sup.update_health(authenticated, docker_ok)
+
+    if (
+        cfg.node_auto_start
+        and sup.desired == "running"
+        and authenticated
+        and docker_ok
+        and not sup.running
+    ):
+        await sup.request_start()
+        log.info("Auto-resumed node (desired=running, NODE_AUTO_START=true)")
+
+    boot = [
+        (
+            f"🤖 Bot online. Node desired: {sup.desired} | Docker: "
+            f"{'ok' if docker_ok else 'NOT REACHABLE'} | Auth: {'yes' if authenticated else 'no'}. "
+            "Type /help for commands."
+        )
+    ]
+    if not docker_ok:
+        boot.append(DOCKER_DEAD_WARNING)
+    for uid in sorted(cfg.allowed_ids):
+        try:
+            await app.bot.send_message(uid, "\n".join(boot))
+        except Exception as exc:
+            log.warning("Boot message to %s failed: %s", uid, exc)
+
+
+async def _health_serve(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    try:
+        await reader.read(1024)  # drain request head
+        writer.write(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK")
+        await writer.drain()
+    finally:
+        writer.close()
+
+
+async def _post_shutdown(app: Application) -> None:
+    sup: Supervisor = app.bot_data["sup"]
+    login: LoginManager = app.bot_data["login"]
+
+    # Stop the watch task (never kills the node process itself).
+    await sup.stop_loop()
+
+    # Cancel any pending login session and kill its child process.
+    try:
+        await login.shutdown()
+    except Exception:
+        log.exception("Login shutdown failed")
+
+    server = app.bot_data.get("health_server")
+    if server is not None:
+        server.close()
+        await server.wait_closed()
+        app.bot_data.pop("health_server", None)
+
+
+# ----------------------------------------------------------------------
+# Wiring
+# ----------------------------------------------------------------------
+
+
+def register_handlers(app: Application, admin_filter) -> None:
+    handlers = [
+        # 1. admin-gated commands
+        CommandHandler("help", cmd_help, filters=admin_filter),
+        CommandHandler("status", cmd_status, filters=admin_filter),
+        CommandHandler("start_node", cmd_start_node, filters=admin_filter),
+        CommandHandler("stop_node", cmd_stop_node, filters=admin_filter),
+        CommandHandler("restart_node", cmd_restart_node, filters=admin_filter),
+        CommandHandler("rewards", cmd_rewards, filters=admin_filter),
+        CommandHandler("logs", cmd_logs, filters=admin_filter),
+        CommandHandler("watch", cmd_watch, filters=admin_filter),
+        CommandHandler("login", cmd_login, filters=admin_filter),
+        CommandHandler("auth_status", cmd_auth_status, filters=admin_filter),
+        CommandHandler("me", cmd_me, filters=admin_filter),
+        CommandHandler("cancel", cmd_cancel, filters=admin_filter),
+        # 2. /id — OPEN to everyone (registered before the text handlers)
+        CommandHandler("id", cmd_id),
+        # 3. admin plain text -> login paste
+        MessageHandler(filters.TEXT & ~filters.COMMAND & admin_filter, on_admin_text),
+        # 4. unauthorized catch-all — registered LAST, same group
+        MessageHandler(~admin_filter, unauthorized_handler),
+    ]
+    for handler in handlers:
+        app.add_handler(handler)
+
+
+def build_app(cfg: Config) -> Application:
+    app = (
+        ApplicationBuilder()
+        .token(cfg.telegram_bot_token)
+        .post_init(_post_init)
+        .post_shutdown(_post_shutdown)
+        .build()
+    )
+    cli = OptimaiCLI(binary=cfg.optimai_bin, home=cfg.optimai_home)
+    sup = Supervisor(
+        cli=cli,
+        data_dir=cfg.data_dir,
+        state_path=cfg.state_path(),
+        log_path=cfg.node_log_path(),
+    )
+    gate = UnauthorizedGate(cfg.unauth_counts_path(), max_messages=cfg.unauth_max_messages)
+    login = LoginManager(cli, ttl_minutes=cfg.login_ttl_minutes)
+
+    app.bot_data.update(cfg=cfg, cli=cli, sup=sup, gate=gate, login=login)
+    admin_filter = filters.User(user_id=sorted(cfg.allowed_ids))
+    register_handlers(app, admin_filter)
+    return app
+
+
+def main() -> None:
+    print_banner()
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    log.info("Starting OptimAI Telegram Node v%s", bot.__version__)
+
+    try:
+        cfg = Config.load()
+    except ConfigError as exc:
+        log.error("%s", exc)
+        sys.stderr.write(f"CONFIG ERROR: {exc}\n")
+        sys.exit(1)
+
+    app = build_app(cfg)
+    log.info(
+        "Config ok: %s admin id(s), data_dir=%s, optimai_bin=%s, health=%s",
+        len(cfg.allowed_ids),
+        cfg.data_dir,
+        cfg.optimai_bin,
+        cfg.enable_health_port or "off",
+    )
+    app.run_polling(drop_pending_updates=True)
+
+
+if __name__ == "__main__":
+    main()
