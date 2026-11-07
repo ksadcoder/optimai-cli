@@ -131,6 +131,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/version — bot + CLI versions\n"
         "/ping — test bot responsiveness\n"
         "/uptime — node supervisor uptime and state\n"
+        "/disk — storage volume disk usage\n"
         "/id — (anyone) your numeric Telegram ID\n"
     )
     await _reply(update, help_text)
@@ -374,6 +375,21 @@ async def cmd_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"<b>Total crashes:</b> {snap['crashes']}",
     )
 
+
+async def cmd_disk(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    import shutil
+    cfg, _cli, _sup, _gate, _login = _wd(context)
+    total, used, free = shutil.disk_usage(cfg.data_dir)
+    gb = 1024 ** 3
+    pct = round((used / total) * 100, 1) if total > 0 else 0
+    await _reply(
+        update,
+        f"💾 <b>Data Storage ({cfg.data_dir})</b>\n"
+        f"Total: {total / gb:.1f} GB\n"
+        f"Used: {used / gb:.1f} GB ({pct}%)\n"
+        f"Free: {free / gb:.1f} GB",
+    )
+
 async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _reply(update, "🏓 <b>Pong!</b> Bot control-plane is responsive.")
 
@@ -539,6 +555,7 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("version", cmd_version, filters=admin_filter),
         CommandHandler("ping", cmd_ping, filters=admin_filter),
         CommandHandler("uptime", cmd_uptime, filters=admin_filter),
+        CommandHandler("disk", cmd_disk, filters=admin_filter),
         # 2. /id — OPEN to everyone (registered before the text handlers)
         CommandHandler("id", cmd_id),
         # 3. admin plain text -> login paste
