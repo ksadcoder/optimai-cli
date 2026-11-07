@@ -102,24 +102,18 @@ copy the final redirect URL → paste it into the bot chat. Done.
 You're live. Updating later: upload the new code (or `git pull`) and run
 `docker compose up -d --build`. Your data (login, state) survives rebuilds — it lives in `./data:/data`.
 
-## 4. Environment variables
+## 4. Configuration
 
-| Variable | Required? | Default | Where it comes from |
+The bot is configured via `.env`. Key variables:
+
+| Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | ✅ required | — | @BotFather → `/newbot` → copy token |
-| `TELEGRAM_ALLOWED_IDS` | ✅ required | — | `/id` command (Step 5) or @userinfobot |
-| `NODE_AUTO_START` | optional | `true` | auto-start on boot when authed + desired=running |
-| `LOG_TAIL_LINES` | optional | `40` | lines shown by `/logs` |
-| `WATCH_SECONDS` | optional | `120` | `/watch` default duration (10-600) |
-| `LOGIN_TTL_MINUTES` | optional | `15` | pending login session expiry |
-| `ENABLE_HEALTH_PORT` | optional | *(off)* | set e.g. `8080` → `GET /health` returns `200 OK` (platform healthchecks; VPS doesn't need it) |
-| `TZ` | optional | `UTC` | log timezone, e.g. `Asia/Kolkata` |
-| `CONTACT_USERNAME` | optional | `mkr_infinity` | promo target for unauthorized users (no `@`) |
-| `UNAUTHORIZED_MESSAGE` | optional | *(empty)* | full override text; may contain `{contact}` |
-| `UNAUTH_MAX_MESSAGES` | optional | `3` | total promo replies per stranger (0-10, `0` = silent) |
-| `OPTIMAI_HOME` | internal | `/data/home` | CLI credentials live in `$OPTIMAI_HOME/.optimai` |
-| `DATA_DIR` | internal | `/data/data` | `state.json`, `unauth_counts.json`, `node.log` |
-| `OPTIMAI_BIN` | internal | `optimai-cli` | CLI binary name/path (tests point it at the stub) |
+| `TELEGRAM_BOT_TOKEN` | Yes | — | Bot token from [@BotFather](https://t.me/BotFather) |
+| `TELEGRAM_ALLOWED_IDS` | Yes | — | Comma-separated admin Telegram user IDs |
+| `ENABLE_HEALTH_PORT` | No | `""` | TCP port for HTTP health checks (e.g. `8080`) |
+| `NODE_AUTO_START` | No | `true` | Auto-start node process on boot |
+
+For the complete dictionary of all options (timeouts, promo limits, paths), see **[docs/ENV-VARS.md](docs/ENV-VARS.md)**.
 
 ## 5. Commands
 
