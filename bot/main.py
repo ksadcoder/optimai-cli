@@ -354,6 +354,14 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await _reply(update, "ℹ️ No pending login session.")
 
 
+
+def _get_git_rev() -> str:
+    try:
+        import subprocess
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        return "release"
+
 async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cfg, cli, sup, _gate, _login = _wd(context)
     rc, out, err = await cli.run("--version", timeout=30)
@@ -361,7 +369,7 @@ async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await _reply(
         update,
         "ℹ️ <b>Versions</b>\n"
-        f"Bot: OptimAI Telegram Node v{bot.__version__}\n"
+        f"Bot: OptimAI Telegram Node v{bot.__version__} (rev {_get_git_rev()})\n"
         f"CLI: {html.escape(cli_version)}",
     )
 
