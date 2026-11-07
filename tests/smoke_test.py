@@ -339,6 +339,7 @@ async def supervisor_checks() -> None:
     check("supervisor: state.json survives fresh instance (reboot sim)", sup2.desired == "stopped")
 
     check("supervisor: backoff schedule 5/15/60/300", BACKOFF_SCHEDULE == [5, 15, 60, 300])
+    check("supervisor: get_crash_limit returns CRASH_LIMIT", sup2.get_crash_limit() == CRASH_LIMIT)
     check("supervisor: crash limit is 5", CRASH_LIMIT == 5)
 
     # double-spawn guard
