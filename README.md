@@ -267,6 +267,13 @@ The `docs/` directory contains deep-dive references for operators and architects
 | [SSH-PRACTICES.md](docs/SSH-PRACTICES.md) | Hardening SSH access for non-root production hosts |
 | [GLOSSARY.md](docs/GLOSSARY.md) | Definitions of terminology across OptimAI and the bot |
 | [FAQ.md](docs/FAQ.md) | Frequently asked operator questions and answers |
+| [RUNBOOK.md](docs/RUNBOOK.md) | Incident triage scenarios for crash loops and socket issues |
+| [METRICS.md](docs/METRICS.md) | TCP health check endpoints and supervisor metrics dictionary |
+| [BACKUP-RESTORE.md](docs/BACKUP-RESTORE.md) | Automated daily cron backup and restore procedure |
+| [ENV-VARS.md](docs/ENV-VARS.md) | Complete catalog of environment variables and defaults |
+| [UPGRADING.md](docs/UPGRADING.md) | Zero data-loss upgrade runbook and rollback steps |
+| [COMPARISON.md](docs/COMPARISON.md) | Comparison matrix against tmux and systemd deployments |
+| [TESTING.md](docs/TESTING.md) | Test harness design and smoke test execution guide |
 
 
 ---
