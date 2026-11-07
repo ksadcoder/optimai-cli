@@ -307,7 +307,7 @@ async def supervisor_checks() -> None:
     snap = sup.snapshot()
     expected_keys = {
         "desired", "running", "pid", "uptime", "last_exit_code",
-        "crashes", "backoff_level", "breaker", "authenticated", "docker_ok",
+        "crashes", "backoff_level", "breaker", "authenticated", "docker_ok", "last_crash_at",
     }
     check("supervisor: snapshot has all fields", expected_keys <= set(snap), str(snap.keys()))
 
