@@ -449,6 +449,8 @@ async def login_checks() -> None:
 
 
 asyncio.run(login_checks())
+import bot
+check("bot: get_full_version_string returns valid string", "OptimAI" in bot.get_full_version_string())
 
 # ======================================================================
 print("\n== main.py wiring (source inspection) ==")
