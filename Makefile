@@ -4,14 +4,16 @@
 SHELL := /bin/bash
 PY := .venv/bin/python
 
-.PHONY: help venv install test compile clean compose-config delete-comms
+.PHONY: help venv install test pytest compile check clean compose-config
 
 help:
 	@echo "targets:"
 	@echo "  make venv            create Python 3.12 venv (uv)"
 	@echo "  make install         install runtime + dev deps into .venv"
-	@echo "  make test            run the standalone smoke suite (no network)"
+	@echo "  make test            run standalone smoke suite (no network)"
+	@echo "  make pytest          run pytest test runner"
 	@echo "  make compile         byte-compile bot/*.py"
+	@echo "  make check           run compile + smoke tests"
 	@echo "  make clean           remove bytecode caches"
 	@echo "  make compose-config  validate docker-compose.yml with a dummy .env"
 
@@ -24,15 +26,20 @@ install:
 test:
 	$(PY) tests/smoke_test.py
 
+pytest:
+	$(PY) -m pytest tests/
+
 compile:
 	$(PY) -m py_compile bot/*.py
 
+check: compile test
+
 clean:
-	find . -name __pycache__ -type d -not -path './.git/*' -not -path './.venv/*' -exec rm -rf {} +
+	find . -name __pycache__ -type d -not -path "./.git/*" -not -path "./.venv/*" -exec rm -rf {} +
 
 compose-config:
 	cp .env.example .env
-	sed -i 's/^TELEGRAM_BOT_TOKEN=$/TELEGRAM_BOT_TOKEN=000:dummy/' .env
-	sed -i 's/^TELEGRAM_ALLOWED_IDS=$/TELEGRAM_ALLOWED_IDS=123456789/' .env
+	sed -i "s/^TELEGRAM_BOT_TOKEN=$/TELEGRAM_BOT_TOKEN=000:dummy/" .env
+	sed -i "s/^TELEGRAM_ALLOWED_IDS=$/TELEGRAM_ALLOWED_IDS=123456789/" .env
 	docker compose config > /dev/null
 	rm .env
