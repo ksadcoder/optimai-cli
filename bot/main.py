@@ -261,6 +261,14 @@ async def cmd_watch(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     seconds = max(10, min(600, seconds))
 
     path = cfg.node_log_path()
+    if not os.path.exists(path):
+        await _reply(
+            update,
+            "ℹ️ <b>Node log file not yet created.</b>\n"
+            "The node has not produced any logs yet. Use /start_node to begin running, "
+            "or wait a moment for initial log output to be written.",
+        )
+        return
     try:
         offset = os.path.getsize(path)
     except OSError:
