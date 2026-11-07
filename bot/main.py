@@ -1,3 +1,4 @@
+from .supervisor import fmt_uptime
 # SPDX-License-Identifier: Apache-2.0
 """Telegram wiring, command handlers, and the entrypoint.
 
@@ -144,6 +145,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     snap = sup.snapshot()
 
     node_line = f"running ({snap['uptime']}, PID {snap['pid']})" if snap["running"] else "stopped"
+    bot_uptime_line = f"Bot uptime: {fmt_uptime(time.monotonic() - _BOT_START_MONOTONIC)}"
     breaker_line = (
         f"crashes: {snap['crashes']}/{CRASH_LIMIT} | backoff level: "
         f"{snap['backoff_level']} | circuit breaker: {snap['breaker']}"
@@ -151,6 +153,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     lines = [
         "<b>Node status</b>",
         f"Node: {node_line}",
+        bot_uptime_line,
         f"Desired state: {snap['desired']}",
         f"Authenticated: {'✅ yes' if snap['authenticated'] else '❌ no — run /login'}",
         f"Docker: {'✅ reachable' if snap['docker_ok'] else '❌ NOT REACHABLE'}",
