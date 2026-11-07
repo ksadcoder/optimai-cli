@@ -63,7 +63,41 @@ else
   warn "swap already $(swap_mb) MB (>= 2G) — nothing to do"
 fi
 
-printf "\n${C_GREEN}VPS preparation done.${C_OFF} Next steps:\n"
+printf "\n${C_GREEN}VPS preparation done.${C_OFF} Preflight checks:\n"
+problems=0
+
+if systemctl is-active --quiet docker; then
+  printf "  ${C_GREEN}[ok]${C_OFF} docker service is active\n"
+else
+  printf "  ${C_RED}[!!]${C_OFF} docker service NOT active -> run: systemctl start docker\n"
+  problems=$((problems + 1))
+fi
+
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+  printf "  ${C_GREEN}[ok]${C_OFF} compose plugin present: %s\n" "$(docker compose version --short 2>/dev/null)"
+else
+  printf "  ${C_RED}[!!]${C_OFF} compose plugin MISSING -> docker compose up will fail\n"
+  problems=$((problems + 1))
+fi
+
+if [ -S /var/run/docker.sock ]; then
+  printf "  ${C_GREEN}[ok]${C_OFF} docker socket present (mounted into the container at runtime)\n"
+else
+  printf "  ${C_YELLOW}[??]${C_OFF} docker socket not found now — if 'docker: not reachable' shows in the bot, check the socket mount in docker-compose.yml\n"
+fi
+
+if [ "$(swap_mb)" -ge 2048 ]; then
+  printf "  ${C_GREEN}[ok]${C_OFF} swap: %s MB, swappiness=%s\n" "$(swap_mb)" "$(cat /proc/sys/vm/swappiness)"
+else
+  printf "  ${C_RED}[!!]${C_OFF} swap below 2G (got %s MB) -> re-run this script\n" "$(swap_mb)"
+  problems=$((problems + 1))
+fi
+
+if [ "$problems" -eq 0 ]; then
+  printf "${C_GREEN}All preflight checks passed.${C_OFF} Next steps:\n"
+else
+  printf "${C_RED}%s check(s) failed${C_OFF}. Fix above, then continue. Next steps:\n" "$problems"
+fi
 printf "  cd optimai-cli\n"
 printf "  cp .env.example .env && nano .env      ${C_YELLOW}# fill the 2 REQUIRED values${C_OFF}\n"
 printf "  docker compose up -d --build\n"
