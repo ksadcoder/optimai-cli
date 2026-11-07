@@ -35,14 +35,15 @@ are wiped on EVERY deploy.
 ## 4. Service type: Worker
 
 The `Procfile` (worker: python -m bot.main) packages already; long polling is
-outbound-only → no public port needed. If you need a web service instead, set
-`ENABLE_HEALTH_PORT` and let Railway's PORT rule drive the healthcheck.
+outbound-only → no public port needed. If you deploy as a web service instead,
+the bot automatically binds to Railway's `$PORT` (or `ENABLE_HEALTH_PORT`) for
+`GET /health -> 200 OK` health checks.
 
 ## 5. Verify
 
 - Boot DM: "Bot online. Node desired: stopped | Docker: NOT REACHABLE | Auth: no."
   ← the NOT REACHABLE part is EXPECTED, that's the honest warning feature.
-- Works: /login /auth_status /rewards /logs /status /help /me /cancel /version /id
+- Works: /login /auth_status /rewards /logs /status /help /me /cancel /version /ping /uptime /disk /system /healthcheck /id
 - Fails by design: /start_node /stop_node /restart_node /watch
   (bot replies with the exact "no Docker daemon here" error)
 

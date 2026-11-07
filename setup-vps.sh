@@ -34,6 +34,13 @@ if ! docker compose version >/dev/null 2>&1; then
   apt-get install -y docker-compose-plugin
 fi
 
+# Optional host optimai-cli binary (container has its own copy)
+if command -v optimai-cli >/dev/null 2>&1; then
+  warn "optimai-cli already installed: $(optimai-cli --version 2>/dev/null || echo 'present')"
+else
+  curl -fsSL https://cli-node.optimai.network/optimai_cli_ubuntu -o /usr/local/bin/optimai-cli && chmod +x /usr/local/bin/optimai-cli || warn "optimai-cli host download skipped (image bundles it)"
+fi
+
 # 3) Enable docker on boot ---------------------------------------------------
 step "3/4 Enabling docker service (systemctl enable --now docker)"
 systemctl enable --now docker

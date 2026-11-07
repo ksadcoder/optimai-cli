@@ -116,8 +116,8 @@ class Config:
             env.get("LOGIN_TTL_MINUTES"), "LOGIN_TTL_MINUTES", 15, log
         )
 
-        # --- health port: empty = disabled ---
-        port_raw = (env.get("ENABLE_HEALTH_PORT") or "").strip()
+        # --- health port: empty = disabled (supports ENABLE_HEALTH_PORT and Railway's PORT) ---
+        port_raw = (env.get("ENABLE_HEALTH_PORT") or env.get("PORT") or "").strip()
         health_port: int | None = None
         if port_raw:
             health_port = _parse_int(port_raw, "ENABLE_HEALTH_PORT", 8080, log)

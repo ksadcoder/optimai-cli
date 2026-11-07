@@ -1,9 +1,9 @@
-# OptimAI Telegram Node v1.0.0
+# OptimAI Telegram Node v1.1.0
 
 ![CI](https://github.com/mkr-infinity/optimai-cli/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
-![Version](https://img.shields.io/badge/version-1.0.0-orange)
+![Version](https://img.shields.io/badge/version-1.1.0-orange)
 [![Telegram](https://img.shields.io/badge/contact-%40mkr__infinity-blue)](https://t.me/mkr_infinity)
 
 **Your 24/7 OptimAI Network node, controlled entirely from Telegram** — start it, stop it, restart it,
@@ -96,6 +96,11 @@ For the complete dictionary of all options (timeouts, promo limits, paths), see 
 | `/me` | admin | your Telegram ID + name, admin yes/no |
 | `/cancel` | admin | cancel a pending `/login` session |
 | `/version` | admin | bot + CLI versions |
+| `/ping` | admin | test bot responsiveness and latency |
+| `/uptime` | admin | bot + supervisor uptime and node state |
+| `/disk` | admin | storage volume disk usage and free space |
+| `/system` | admin | OS, Python runtime, and host resource diagnostics |
+| `/healthcheck` | admin | subsystem health validation (supervisor, config, store) |
 | `/id` | **anyone** | your numeric Telegram ID (unauthorized users' `/id` also counts toward their promo budget) |
 
 ## 6. How the 24/7 guarantee works
@@ -142,7 +147,7 @@ what cannot exist on Railway (Docker-in-Docker needs privileged mode and is a no
 
 | On Railway | Works? |
 |---|---|
-| `/login`, `/auth_status`, `/rewards`, `/logs`, `/status`, `/help`, `/me`, `/cancel`, `/id` | ✅ yes |
+| `/login`, `/auth_status`, `/rewards`, `/logs`, `/status`, `/help`, `/me`, `/cancel`, `/version`, `/ping`, `/uptime`, `/disk`, `/system`, `/healthcheck`, `/id` | ✅ yes |
 | Promo gatekeeping, boot message, 24/7 keep-alive (Railway ON_FAILURE policy + supervisor) | ✅ yes |
 | `/start_node`, `/stop_node`, `/restart_node`, `/watch` | ❌ **fails by design** — the bot returns the honest error: "no Docker daemon here" |
 
@@ -164,7 +169,7 @@ absent socket) and warns openly instead of failing mysteriously. **The warning I
 3. **Create a Volume** mounted at `/data` and attach it to the service — without it, login + state
 are wiped on every deploy.
 4. Use the **Procfile**: deploy as a *Worker* service (`worker: python -m bot.main`) — long polling is
-outbound-only, no public port needed. (Web service also works if you set `ENABLE_HEALTH_PORT`.)
+outbound-only, no public port needed. If deployed as a *Web* service, the bot automatically binds to Railway's dynamic `$PORT` (or `ENABLE_HEALTH_PORT`) for HTTP health checks (`GET /health -> 200 OK`).
 
 **Cost:** Railway is usage-based — a small always-on worker is typically **~USD 10-20/month**, and it
 can't even run the node. A flat **~EUR 4-6/month VPS** runs bot AND node. → **Railway is for testing
@@ -242,7 +247,7 @@ The `docs/` directory contains deep-dive references for operators and architects
 
 ### Attribution
 
-**OptimAI Telegram Node v1.0.0** — built by **Mohammad Kaif Raja (mkr-infinity)**
+**OptimAI Telegram Node v1.1.0** — built by **Mohammad Kaif Raja (mkr-infinity)**
 [Telegram @mkr_infinity](https://t.me/mkr_infinity) · [Support](https://buymeacoffee.com/mkr_infinity) ·
 UPI `mkr-infinity@ybl`. Unauthorized modification, redistribution, or commercial sale is prohibited
 without prior written permission. Personal use permitted.

@@ -15,9 +15,13 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Download failure must not hard-fail the build: the bot then runs in the
-# degraded "Docker unreachable" mode (warning path), which is exactly the
-# Railway behavior anyway. Never attempt Docker-in-Docker.
+# Download official OptimAI CLI binary into /usr/local/bin/optimai-cli.
+RUN set -ux; \
+    (curl -fsSL "https://cli-node.optimai.network/optimai_cli_ubuntu" -o /usr/local/bin/optimai-cli \
+     && chmod +x /usr/local/bin/optimai-cli) \
+    || echo "WARNING: optimai-cli binary download failed."
+
+# Best-effort static Docker CLI CLIENT (pinned; NOT the daemon).
 RUN set -ux; \
     (curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_CLI_VERSION}.tgz" -o /tmp/docker.tgz \
      && tar -xzf /tmp/docker.tgz -C /tmp \
