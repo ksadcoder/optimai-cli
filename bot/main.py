@@ -133,6 +133,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/uptime — node supervisor uptime and state\n"
         "/disk — storage volume disk usage\n"
         "/system — platform and runtime diagnostics\n"
+        "/healthcheck — check internal bot subsystems\n"
         "/id — (anyone) your numeric Telegram ID\n"
     )
     await _reply(update, help_text)
@@ -402,6 +403,20 @@ async def cmd_system(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"PID: {os.getpid()}",
     )
 
+
+async def cmd_healthcheck(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    import os
+    cfg, _cli, sup, _gate, _login = _wd(context)
+    snap = sup.snapshot()
+    data_ok = os.access(cfg.data_dir, os.W_OK)
+    await _reply(
+        update,
+        "🩺 <b>Subsystem healthcheck</b>\n"
+        f"Supervisor desired: <code>{snap['desired']}</code>\n"
+        f"Circuit breaker: {snap['breaker']}\n"
+        f"Data dir writable: {'✅ yes' if data_ok else '❌ no'}",
+    )
+
 async def cmd_ping(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await _reply(update, "🏓 <b>Pong!</b> Bot control-plane is responsive.")
 
@@ -569,6 +584,7 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("uptime", cmd_uptime, filters=admin_filter),
         CommandHandler("disk", cmd_disk, filters=admin_filter),
         CommandHandler("system", cmd_system, filters=admin_filter),
+        CommandHandler("healthcheck", cmd_healthcheck, filters=admin_filter),
         # 2. /id — OPEN to everyone (registered before the text handlers)
         CommandHandler("id", cmd_id),
         # 3. admin plain text -> login paste
