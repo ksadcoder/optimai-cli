@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Pytest wrapper around the standalone smoke suite.
 
 The committed suite (`tests/smoke_test.py`) is the single source of truth —

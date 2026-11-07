@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """pexpect-driven paste-login flow for the optimai CLI.
 
 Drives `optimai-cli auth login --no-open --paste` (verified v0.1.63: the

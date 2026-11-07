@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Unauthorized-user promo rate limiter (the hosting-provider funnel).
 
 Each Telegram user ID gets a TOTAL budget of promo replies

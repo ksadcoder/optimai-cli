@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Async wrapper around the `optimai-cli` binary plus pure log helpers.
 
 Verified CLI surface (optimai-cli v0.1.63, core CLI 0.1.63):

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Desired-state supervisor: the 24/7 engine of the node.
 
 Design:

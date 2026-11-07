@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Telegram wiring, command handlers, and the entrypoint.
 
 Handler order is bug-prone and implemented EXACTLY as specified:
