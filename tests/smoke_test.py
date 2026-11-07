@@ -63,7 +63,7 @@ from bot.optimai import (  # noqa: E402
     rotate_log,
     tail_file,
 )
-from bot.supervisor import BACKOFF_SCHEDULE, CRASH_LIMIT, Supervisor, fmt_uptime  # noqa: E402
+from bot.supervisor import BACKOFF_SCHEDULE, CRASH_LIMIT, Supervisor, breakdown_uptime, fmt_uptime  # noqa: E402
 
 
 def base_env(**overrides) -> dict[str, str]:
@@ -380,6 +380,11 @@ async def supervisor_checks() -> None:
     check(
         "supervisor: fmt_uptime days boundary and negative seconds",
         fmt_uptime(2 * 86400 + 5 * 3600) == "2d 5h" and fmt_uptime(-10) == "-" and fmt_uptime(125) == "2m",
+    )
+    check(
+        "supervisor: breakdown_uptime returns dict",
+        breakdown_uptime(90061) == {"days": 1, "hours": 1, "minutes": 1, "seconds": 1}
+        and breakdown_uptime(-5) == {"days": 0, "hours": 0, "minutes": 0, "seconds": 0},
     )
 
     # stop_loop must NOT kill the node process

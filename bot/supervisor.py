@@ -46,6 +46,16 @@ CRASH_TAIL_LINES = 15
 AlertFn = Callable[[str], "Awaitable[None] | None"]
 
 
+
+def breakdown_uptime(seconds: int) -> dict[str, int]:
+    """Break down seconds into days, hours, minutes, and seconds."""
+    if seconds < 0:
+        return {"days": 0, "hours": 0, "minutes": 0, "seconds": 0}
+    days, rem = divmod(seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, secs = divmod(rem, 60)
+    return {"days": days, "hours": hours, "minutes": minutes, "seconds": secs}
+
 def fmt_uptime(seconds: float | None) -> str:
     """Human uptime like `3h 12m` / `2d 4h` / `45s`."""
     if seconds is None or seconds < 0:
