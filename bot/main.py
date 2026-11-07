@@ -1,4 +1,3 @@
-from .supervisor import fmt_uptime
 # SPDX-License-Identifier: Apache-2.0
 """Telegram wiring, command handlers, and the entrypoint.
 
@@ -41,7 +40,7 @@ from bot.optimai import (
     read_new_chunk,
     tail_file,
 )
-from bot.supervisor import CRASH_LIMIT, Supervisor
+from bot.supervisor import CRASH_LIMIT, Supervisor, fmt_uptime
 
 log = logging.getLogger("bot.main")
 
