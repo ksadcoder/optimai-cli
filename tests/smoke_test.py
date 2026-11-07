@@ -428,7 +428,7 @@ with open(os.path.join(ROOT, "bot", "main.py"), encoding="utf-8") as fh:
 
 for cmd in (
     "help", "status", "start_node", "stop_node", "restart_node", "rewards",
-    "logs", "watch", "login", "auth_status", "me", "cancel", "id",
+    "logs", "watch", "login", "auth_status", "me", "cancel", "id", "version",
 ):
     check(
         f"main: /{cmd} handler registered",

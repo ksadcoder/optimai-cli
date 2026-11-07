@@ -137,6 +137,7 @@ You're live. Updating later: upload the new code (or `git pull`) and run
 | `/auth_status` | admin | CLI auth status text |
 | `/me` | admin | your Telegram ID + name, admin yes/no |
 | `/cancel` | admin | cancel a pending `/login` session |
+| `/version` | admin | bot + CLI versions |
 | `/id` | **anyone** | your numeric Telegram ID (unauthorized users' `/id` also counts toward their promo budget) |
 
 ## 6. How the 24/7 guarantee works
