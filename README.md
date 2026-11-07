@@ -90,14 +90,62 @@ docker compose up -d --build
 ```
 
 Now open Telegram and talk to your bot:
-1. Send `/login` — click the **Open login page** button.
-2. Sign in with your [OptimAI account](https://node.optimai.network/register?ref=646D12E7).
-3. Copy the final redirect URL from your browser address bar and paste it into the Telegram chat.
-4. Send `/status` or `/start_node` to begin earning! ⛏️
+* **Option A — Browser OAuth:**
+  1. Send `/login` and tap the **Open login page** button.
+  2. Sign in with your [OptimAI account](https://node.optimai.network/register?ref=646D12E7).
+  3. Copy the final redirect URL from your browser address bar and paste it into chat.
+* **Option B — Direct Email & Password:**
+  * Send: <code>/login your_email@example.com your_password</code>
+* Send `/status` or `/start_node` to begin earning! ⛏️
 
 ---
 
-## 4. Bot Commands
+## 4. Running Locally (macOS, Windows, Linux)
+
+You can run the bot on your local personal computer just as easily as on a remote VPS.
+
+### 💻 Option 1: Local with Docker (Recommended)
+1. Ensure **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux) is open and running.
+2. Clone and configure:
+   ```bash
+   git clone https://github.com/mkr-infinity/optimai-cli.git && cd optimai-cli
+   cp .env.example .env
+   # Enter TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_IDS in .env
+   docker compose up -d
+   ```
+
+### 🐍 Option 2: Local Native Python (Bare-Metal)
+1. Set up a Python 3.12 environment:
+   ```bash
+   python3 -m venv .venv && source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. Download the official OptimAI CLI binary for your operating system:
+   * **Linux**:
+     ```bash
+     curl -fsSL https://cli-node.optimai.network/optimai_cli_ubuntu -o optimai-cli
+     chmod +x optimai-cli && sudo mv optimai-cli /usr/local/bin/
+     ```
+   * **macOS (Universal)**:
+     ```bash
+     curl -fsSL https://cli-node.optimai.network/optimai_cli_darwin_universal2 -o optimai-cli
+     chmod +x optimai-cli && sudo mv optimai-cli /usr/local/bin/
+     ```
+   * **Windows (PowerShell)**:
+     ```powershell
+     curl.exe -fL https://cli-node.optimai.network/optimai_cli_windows.exe -o optimai-cli.exe
+     ```
+3. Copy config and launch:
+   ```bash
+   cp .env.example .env
+   # Enter your BOT_TOKEN and ALLOWED_IDS in .env
+   python -m bot.main
+   ```
+   *(The bot automatically detects local mode and saves session data to `./data`)*.
+
+---
+
+## 5. Bot Commands
 
 | Command | Allowed Users | Description |
 |---|---|---|
@@ -109,8 +157,10 @@ Now open Telegram and talk to your bot:
 | `/rewards` | Admin | Display current OptimAI points & rewards balance |
 | `/logs` | Admin | View the last 40 lines of `node.log` |
 | `/watch [sec]` | Admin | Live streaming log tail (default 120s, range 10–600s) |
-| `/login` | Admin | Start headless OAuth login flow (with ref registration link) |
+| `/login [email pass]` | Admin | Browser OAuth or direct email/password sign-in |
+| `/login_legacy <email> <p>`| Admin | Direct email and password login |
 | `/auth_status` | Admin | Check if node is authenticated |
+| `/update_cli` | Admin | Check for and install upstream optimai-cli updates |
 | `/me` | Admin | Display your Telegram user info & admin privileges |
 | `/cancel` | Admin | Cancel an active `/login` session |
 | `/version` | Admin | Show bot and CLI release versions |
@@ -123,7 +173,7 @@ Now open Telegram and talk to your bot:
 
 ---
 
-## 5. Configuration Reference (`.env`)
+## 6. Configuration Reference (`.env`)
 
 | Variable | Required? | Default | Description |
 |---|---|---|---|
@@ -141,7 +191,7 @@ Now open Telegram and talk to your bot:
 
 ---
 
-## 6. How the 24/7 Guarantee Works
+## 7. How the 24/7 Guarantee Works
 
 Your node stays online through 3 automated protection layers:
 
@@ -161,7 +211,7 @@ Your node stays online through 3 automated protection layers:
 
 ---
 
-## 7. Hosting Provider Mode (Promo Funnel)
+## 8. Hosting Provider Mode (Promo Funnel)
 
 When strangers find your bot and message it, they receive:
 ```text
@@ -174,7 +224,7 @@ To host your own OptimAI node server (paid), contact @mkr_infinity.
 
 ---
 
-## 8. Railway Deployment (Control-Plane Only)
+## 9. Railway Deployment (Control-Plane Only)
 
 > [!NOTE]
 > Railway containers do not include a host Docker daemon (`docker.sock`). On Railway, the bot operates in **control-plane mode**: `/login`, `/rewards`, `/logs`, `/status`, and `/healthcheck` work 100%, but `/start_node` will honestly report that Docker is unreachable. Use a VPS for actual mining.
@@ -190,21 +240,21 @@ To host your own OptimAI node server (paid), contact @mkr_infinity.
 
 ---
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Issue | Cause | Fix |
 |---|---|---|
-| `Not authenticated` error | Session expired or first run | Run `/login` and paste the redirect URL |
+| `Not authenticated` error | Session expired or first run | Run `/login` or `/login email password` |
 | Bot not responding | Invalid token or network down | Check `TELEGRAM_BOT_TOKEN` and run `docker compose logs -f` |
 | `no Docker daemon here` | Running on Railway or socket unmounted | Normal on Railway; on VPS check `/var/run/docker.sock` mount |
 | Node stopped unexpectedly | Crashed 5 times in a row | Send `/logs` to see the error, fix it, then send `/restart_node` |
-| Outdated CLI warning | Upstream released an update | Run `docker compose build --no-cache && docker compose up -d` |
+| Outdated CLI warning | Upstream released an update | Run `/update_cli` in Telegram or rebuild container |
 
 *(See [docs/RUNBOOK.md](docs/RUNBOOK.md) for in-depth incident recovery).*
 
 ---
 
-## 10. Growth Ideas
+## 11. Growth Ideas
 
 * **Multi-Node Fleet**: Manage 10+ node servers across different providers from a single Telegram channel.
 * **Auto-Claim Rewards**: Automate periodic rewards balance scrapes and daily balance summaries.
@@ -212,7 +262,7 @@ To host your own OptimAI node server (paid), contact @mkr_infinity.
 
 ---
 
-## 11. Security Checklist
+## 12. Security Checklist
 
 * 🔒 **Never commit `.env`** — it contains your live Telegram token.
 * 🔒 **Keep `TELEGRAM_ALLOWED_IDS` minimal** — anyone in this list can control your node.
@@ -220,7 +270,7 @@ To host your own OptimAI node server (paid), contact @mkr_infinity.
 
 ---
 
-## 12. Documentation Index
+## 13. Documentation Index
 
 Detailed guides are available in the [`docs/`](docs/) directory:
 

@@ -142,12 +142,14 @@ class Config:
         unauthorized_message = override if override else _BUILTIN_UNAUTHORIZED_TEMPLATE
         unauthorized_message = unauthorized_message.replace("{contact}", contact)
 
-        # --- internal paths ---
+        # --- internal paths (Docker /data or local ./data fallback) ---
+        default_home = "/data/home" if os.path.exists("/data") and os.access("/data", os.W_OK) else os.path.abspath("./data/home")
+        default_data = "/data/data" if os.path.exists("/data") and os.access("/data", os.W_OK) else os.path.abspath("./data/data")
         optimai_home = os.path.abspath(
-            os.path.expanduser((env.get("OPTIMAI_HOME") or "").strip() or "/data/home")
+            os.path.expanduser((env.get("OPTIMAI_HOME") or "").strip() or default_home)
         )
         data_dir = os.path.abspath(
-            os.path.expanduser((env.get("DATA_DIR") or "").strip() or "/data/data")
+            os.path.expanduser((env.get("DATA_DIR") or "").strip() or default_data)
         )
         optimai_bin = (env.get("OPTIMAI_BIN") or "").strip() or "optimai-cli"
 

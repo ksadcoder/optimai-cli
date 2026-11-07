@@ -38,18 +38,37 @@ if [ $# -gt 0 ]; then sub="$1"; shift; fi
 
 no_open=false
 paste=false
+legacy=false
 for arg in "$@"; do
   case "$arg" in
     --no-open) no_open=true ;;
     --paste)   paste=true ;;
+    --legacy)  legacy=true ;;
   esac
 done
 
 case "$cmd" in
+  update)
+    echo "Checking for OptimAI CLI updates..."
+    echo "CLI is up to date (version 0.1.63)."
+    exit 0
+    ;;
   auth)
     case "$sub" in
       login)
-        if [ "$no_open" = true ]; then
+        if [ "$legacy" = true ]; then
+          printf "Email: "
+          IFS= read -r email
+          printf "Password: "
+          IFS= read -r pass
+          if [ "$pass" = "badpass" ] || [ "$pass" = "wrongpass" ]; then
+            echo "Error: Invalid password"
+            exit 1
+          fi
+          touch "$AUTH_FLAG"
+          echo "Login successful."
+          exit 0
+        elif [ "$no_open" = true ]; then
           echo "Visit this URL to log in:"
           echo "https://mock.node.optimai.network/login?code=TEST123"
           echo "Then paste the redirect URL or code back into this prompt:"

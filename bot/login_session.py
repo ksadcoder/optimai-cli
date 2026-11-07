@@ -211,8 +211,56 @@ class LoginManager:
         session = self._session
         assert session is not None
         result = await session.submit(text)
-        await self._clear(silent=True)
+        await self.cancel(silent=True)
         return result
+
+    async def login_legacy(self, email: str, password: str) -> tuple[bool, str]:
+        """Direct email/password login using `optimai-cli auth login --legacy`."""
+        await self.cancel(silent=True)
+
+        def _legacy() -> tuple[bool, str]:
+            env = os.environ.copy()
+            env["HOME"] = self.cli.home
+            try:
+                child = pexpect.spawn(
+                    self.cli.binary,
+                    ["auth", "login", "--legacy"],
+                    env=env,
+                    encoding="utf-8",
+                    timeout=20,
+                )
+                child.expect(r"Email.*:", timeout=15)
+                child.sendline(email.strip())
+                child.expect(r"Password.*:", timeout=15)
+                child.sendline(password.strip())
+
+                lines: list[str] = []
+                ok = False
+                while True:
+                    index = child.expect([pexpect.EOF, pexpect.TIMEOUT, r"[^\r\n]+"], timeout=20)
+                    if index == 0:
+                        if child.before:
+                            lines.append(child.before)
+                        break
+                    if index == 1:
+                        lines.append("(timed out waiting for response)")
+                        break
+                    line = child.match.group(0).rstrip()
+                    lines.append(line)
+                    low = line.lower()
+                    if any(word in low for word in SUCCESS_WORDS):
+                        ok = True
+                        break
+                    if any(word in low for word in FAILURE_WORDS):
+                        ok = False
+                        break
+                child.close(force=True)
+                msg = " | ".join(l.strip() for l in lines if l.strip()) or ("Logged in successfully." if ok else "Login failed.")
+                return (ok, msg)
+            except pexpect.ExceptionPexpect as exc:
+                return (False, f"Legacy login error: {exc}")
+
+        return await asyncio.to_thread(_legacy)
 
     async def cancel(self, silent: bool = False) -> bool:
         """Cancel the pending session (closes the pexpect child)."""

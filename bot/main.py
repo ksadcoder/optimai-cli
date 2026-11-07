@@ -126,10 +126,11 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "/rewards — OptimAI rewards balance\n"
         "/logs — last lines of node.log\n"
         "/watch [seconds] — live-tail node.log (10-600)\n"
-        "/login — OptimAI account login via paste flow\n"
+        "/login [email password] — browser OAuth or email/password sign-in\n"
         "/auth_status — CLI auth status\n"
         "/me — your Telegram ID and name\n"
         "/cancel — cancel the pending /login session\n"
+        "/update_cli — check and update upstream optimai-cli\n"
         "/version — bot + CLI versions\n"
         "/ping — test bot responsiveness\n"
         "/uptime — node supervisor uptime and state\n"
@@ -305,6 +306,27 @@ async def cmd_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if await cli.is_authenticated():
         await _reply(update, "✅ Already authenticated. Use /auth_status for details.")
         return
+
+    # Check for direct email + password arguments: /login <email> <password>
+    if context.args and len(context.args) >= 2:
+        email = context.args[0]
+        password = context.args[1]
+        await _reply(update, "⏳ Attempting email & password authentication...")
+        ok, msg = await login.login_legacy(email, password)
+        if ok:
+            await _reply(
+                update,
+                f"✅ <b>Login successful</b>\n\n{html.escape(msg)}\n\n"
+                "Use /start_node to start mining!",
+            )
+        else:
+            await _reply(
+                update,
+                f"❌ <b>Login failed</b>\n\n{html.escape(msg)}\n\n"
+                "Check your credentials or use the browser login flow.",
+            )
+        return
+
     url = await login.start()
     if not url:
         await _reply(
@@ -321,12 +343,23 @@ async def cmd_login(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     await _reply(
         update,
-        "🔑 Open the login page, sign in to your OptimAI account, then copy the "
-        "final redirect URL and paste it here. This session expires in "
-        f"{cfg.login_ttl_minutes} minutes.\n\n"
+        "🔑 <b>OptimAI Account Authentication</b>\n\n"
+        "<b>Method 1 (Browser OAuth):</b>\n"
+        "1. Tap <b>Open login page</b> below.\n"
+        "2. Sign in, copy the final redirect URL, and paste it here.\n\n"
+        "<b>Method 2 (Direct Email & Password):</b>\n"
+        "Send: <code>/login your_email@example.com your_password</code>\n\n"
         "Need an account? Tap <b>Register</b> below.",
         keyboard,
     )
+
+
+async def cmd_update_cli(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg, cli, _sup, _gate, _login = _wd(context)
+    await _reply(update, "⏳ Checking for OptimAI CLI updates...")
+    rc, out, err = await cli.run("update", timeout=60)
+    text = (out + "\n" + err).strip() or f"(exit code {rc})"
+    await _reply(update, f"🔄 <b>CLI Update Result:</b>\n<pre>{html.escape(text)}</pre>")
 
 
 async def cmd_auth_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -607,9 +640,11 @@ def register_handlers(app: Application, admin_filter) -> None:
         CommandHandler("logs", cmd_logs, filters=admin_filter),
         CommandHandler("watch", cmd_watch, filters=admin_filter),
         CommandHandler("login", cmd_login, filters=admin_filter),
+        CommandHandler("login_legacy", cmd_login, filters=admin_filter),
         CommandHandler("auth_status", cmd_auth_status, filters=admin_filter),
         CommandHandler("me", cmd_me, filters=admin_filter),
         CommandHandler("cancel", cmd_cancel, filters=admin_filter),
+        CommandHandler("update_cli", cmd_update_cli, filters=admin_filter),
         CommandHandler("version", cmd_version, filters=admin_filter),
         CommandHandler("ping", cmd_ping, filters=admin_filter),
         CommandHandler("uptime", cmd_uptime, filters=admin_filter),

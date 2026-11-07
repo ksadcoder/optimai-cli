@@ -457,6 +457,10 @@ async def login_checks() -> None:
     check("login: TTL expiry auto-cancels the session", not mgr.has_pending)
     ok, text = await mgr.submit("late")
     check("login: submit without pending session -> helpful error", not ok and "/login first" in text)
+    ok_leg, msg_leg = await mgr.login_legacy("user@example.com", "goodpass")
+    check("login: legacy login with valid credentials succeeds", ok_leg and "success" in msg_leg.lower())
+    ok_bad, msg_bad = await mgr.login_legacy("user@example.com", "wrongpass")
+    check("login: legacy login with wrong password fails", not ok_bad and "invalid" in msg_bad.lower())
     await mgr.shutdown()
 
 
@@ -472,7 +476,7 @@ with open(os.path.join(ROOT, "bot", "main.py"), encoding="utf-8") as fh:
 
 for cmd in (
     "help", "status", "start_node", "stop_node", "restart_node", "rewards",
-    "logs", "watch", "login", "auth_status", "me", "cancel", "id", "version", "ping", "uptime", "disk", "system", "healthcheck",
+    "logs", "watch", "login", "auth_status", "me", "cancel", "id", "version", "ping", "uptime", "disk", "system", "healthcheck", "update_cli", "login_legacy",
 ):
     check(
         f"main: /{cmd} handler registered",
