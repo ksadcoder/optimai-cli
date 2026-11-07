@@ -1,0 +1,30 @@
+# ============================================================
+# optimai-telegram-node — VPS runtime (Deployment A, primary)
+# Layer 1 of the 24/7 guarantee: restart: unless-stopped brings the
+# container back after crashes, reboots and docker daemon restarts.
+# ============================================================
+
+services:
+  optimai:
+    build: .
+    container_name: optimai-telegram-node
+    restart: unless-stopped
+    # PID 1 signal reaping so the CLI's graceful SIGINT handling works
+    init: true
+    env_file: .env
+    volumes:
+      # Persistent state: credentials ($HOME/.optimai), state.json,
+      # unauth_counts.json, node.log. Rebuild the image freely; data survives.
+      - ./data:/data
+      # The optimai node workload launches containers through the HOST
+      # Docker engine via its socket. No privileged mode, no DinD.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    # Optional: uncomment ONLY when you also set ENABLE_HEALTH_PORT in .env
+    # (platform healthchecks; not needed for a plain VPS deployment).
+    #
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${ENABLE_HEALTH_PORT:-8080}/health || exit 1"]
+    #   interval: 60s
+    #   timeout: 5s
+    #   retries: 3
