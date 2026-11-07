@@ -84,6 +84,7 @@ class Supervisor:
         self._last_exit_code: int | None = None
 
         self._consecutive_crashes = 0
+        self._last_crash_at: float | None = None
         self._backoff_level = 0
         self._breaker_open = False
         self._restart_scheduled = False
@@ -303,6 +304,7 @@ class Supervisor:
 
     async def _handle_crash(self) -> None:
         self._consecutive_crashes += 1
+        self._last_crash_at = time.time()
         tail = tail_file(self._log_path, CRASH_TAIL_LINES)
         tail_text = "\n".join(tail[-CRASH_TAIL_LINES:])
         log.warning(
@@ -374,6 +376,7 @@ class Supervisor:
             "uptime": fmt_uptime(uptime),
             "last_exit_code": self._last_exit_code if not self.running else 0,
             "crashes": self._consecutive_crashes,
+            "last_crash_at": self._last_crash_at,
             "backoff_level": self._backoff_level,
             "breaker": "OPEN" if self._breaker_open else "CLOSED",
             "authenticated": self._authenticated,
