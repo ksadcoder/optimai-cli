@@ -362,6 +362,13 @@ def _get_git_rev() -> str:
     except Exception:
         return "release"
 
+
+def _format_timestamp(ts: float | None) -> str:
+    if not ts:
+        return "(never)"
+    import datetime
+    return datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
 async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     cfg, cli, sup, _gate, _login = _wd(context)
     rc, out, err = await cli.run("--version", timeout=30)
