@@ -1,15 +1,16 @@
 #!/bin/sh
 # prepare-commit-msg — TEMPORARY pair-coauthor trailer helper.
 #
-# Appends one `Co-authored-by:` trailer per entry in .coauthors AFTER
-# the user's message, with a single blank line separator, at the very
-# end of the commit message file.
+# Appends `Co-authored-by:` trailers randomly selected from .coauthors
+# (populated from mkr-infinity followers) AFTER the user's message, with
+# a single blank line separator, at the very end of the commit message file.
 #
 # Behavior contract:
 #   - acts ONLY for normal commits (skips merge / squash / rebase, and
 #     does not meddle with --amend reuse commits either: it can only
 #     append, never strip, so amend stays intact)
 #   - idempotent: entries already present in the message are skipped
+#   - selects a dynamic count (2 to 10) of distinct co-authors per commit
 #   - silent no-op if .coauthors is missing/empty or has no usable lines
 #   - always exits 0 — never blocks a commit
 #
@@ -37,6 +38,23 @@ root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 coauthors_file="$root/.coauthors"
 [ -f "$coauthors_file" ] || exit 0
 
+# Count usable coauthor entries in file
+total=$(grep -c '<.*>' "$coauthors_file" 2>/dev/null || echo 0)
+[ "$total" -ge 1 ] || exit 0
+
+# Dynamic coauthor count: randomly pick between 2 and 10 (or up to total available)
+min=2
+max=10
+[ "$total" -lt "$max" ] && max="$total"
+[ "$min" -gt "$max" ] && min="$max"
+
+if command -v shuf >/dev/null 2>&1; then
+  count=$(shuf -i "$min"-"$max" -n 1 2>/dev/null || echo "$min")
+  selected=$(shuf -n "$count" "$coauthors_file" 2>/dev/null || cat "$coauthors_file")
+else
+  selected=$(cat "$coauthors_file")
+fi
+
 blank_written=
 while IFS= read -r line || [ -n "$line" ]; do
   # trim surrounding whitespace and carriage returns
@@ -46,16 +64,11 @@ while IFS= read -r line || [ -n "$line" ]; do
   esac
   # accept only plausible "Name <email>" author lines
   case "$line" in
-    *'<'*'>') ;;
+    *'<'*'>'*) ;;
     *) continue ;;
   esac
-  # idempotency: allow each entry up to as many times as it appears in
-  # .coauthors (three identical placeholder lines = three trailers)
-  co_count=$(grep -cF -- "$line" "$coauthors_file" 2>/dev/null || true)
-  msg_count=$(grep -cF -- "Co-authored-by: $line" "$msg_file" 2>/dev/null || true)
-  [ -n "$co_count" ] || co_count=0
-  [ -n "$msg_count" ] || msg_count=0
-  if [ "$msg_count" -ge "$co_count" ]; then
+  # idempotency: check if already in msg_file
+  if grep -qF "Co-authored-by: $line" "$msg_file" 2>/dev/null; then
     continue
   fi
   if [ -z "$blank_written" ]; then
@@ -64,6 +77,8 @@ while IFS= read -r line || [ -n "$line" ]; do
     blank_written=1
   fi
   printf 'Co-authored-by: %s\n' "$line" >> "$msg_file"
-done < "$coauthors_file"
+done <<EOF
+$selected
+EOF
 
 exit 0
