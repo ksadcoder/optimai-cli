@@ -11,8 +11,6 @@
 | **Honesty path** | Railway behavior: no docker.sock → node commands return the exact "no Docker daemon here" error instead of a mysterious crash. |
 | **Persistent stop** | `/stop_node` result that survives reboots forever until `/start_node`. |
 | **docker.sock** | The host's Docker control socket mounted into the container — the ONLY way the node workload can run; absent on Railway. |
-| **Deafard state** | — |
-| **Sleep debt** | — |
 | **node.log** | The node process's stdout+stderr, appended under `/data/data`; rotated at 10 MB into `node.log.1`. |
 | **drop_pending_updates** | Telegram polling option that discards messages sent while the bot was offline — stale command floods don't execute. |
 | **Pair credit** | GitHub achievement engine: a merged PR whose commits contain `Co-authored-by:` trailers credits every listed co-author. This repo temporarily stamps trailers automatically (SETUP-PAIR.md). |
